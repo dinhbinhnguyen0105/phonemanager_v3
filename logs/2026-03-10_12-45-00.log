@@ -1,0 +1,2 @@
+12:45:00 - [32mSUCCESS[0m - [connection.py:173)] - Database tables initialized successfully.
+12:45:00 - [32mSUCCESS[0m - [_manager_services.py:31)] - Connected to Redis successfully.

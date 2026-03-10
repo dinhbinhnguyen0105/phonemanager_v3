@@ -1,0 +1,3 @@
+16:48:32 - [32mSUCCESS[0m - [connection.py:173)] - Database tables initialized successfully.
+16:48:32 - [32mSUCCESS[0m - [_manager_services.py:31)] - Connected to Redis successfully.
+16:48:34 - [32mSUCCESS[0m - [user_controller.py:29)] - Đã lấy thành công 1 profiles từ thiết bị.

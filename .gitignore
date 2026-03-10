@@ -1,0 +1,10 @@
+.venv
+.env
+.vscode
+.database
+.results.json
+dist
+build
+__pycache__/
+*.pyc
+*.pyo

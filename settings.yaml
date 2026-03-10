@@ -1,0 +1,13 @@
+# settings.yaml
+database:
+  database_path: "./repositories/app_database.db"
+
+apk_dir: "./apks"
+
+logs:
+  directory: "./logs"
+
+redis:
+  host: "localhost"
+  port: 6378
+  db: 0
