@@ -14,6 +14,8 @@ from src.controllers._manager_controllers import ControllerManager
 
 from src.views.pages.home.device_table import DeviceTable
 from src.views.pages.home.user_table import UserTable
+from src.entities import User
+from src.utils.logger import logger
 
 
 class HomePage(QWidget):
@@ -92,10 +94,10 @@ class HomePage(QWidget):
         )
         
         # User synchronization
-        self.controllers.user_controller.sync_completed.connect(
+        self.controllers.user_controller.user_sync_completed.connect(
             self.on_user_sync_completed
         )
-        self.controllers.user_controller.sync_failed.connect(self.on_user_sync_failed)
+        self.controllers.user_controller.user_sync_failed.connect(self.on_user_sync_failed)
 
     # ==========================================
     # LOGIC HANDLERS
@@ -148,16 +150,12 @@ class HomePage(QWidget):
                 f"🔴 Disconnected: {device.device_name} ({device.device_id})"
             )
 
-    def on_user_sync_completed(self, payload: Dict[str, Any]):
-        """Triggered after Worker fetches data and Service saves to SQLite"""
+    def on_user_sync_completed(self, device: Device, users_data: List[User]):
         self.log_message("✅ Profile synchronization successful!")
-
-        # 1. Unlock User Table
         self.user_table.setEnabled(True)
-
-        # 2. Reload data from SQLite
         if hasattr(self.user_table, "_model"):
             self.user_table._model.select()
+            self.user_table._model.setFilter(f"device_uuid = '{device.uuid}'")
 
     def on_user_sync_failed(self, error_msg: str):
         """Triggered on ADB connection issues or DB errors"""

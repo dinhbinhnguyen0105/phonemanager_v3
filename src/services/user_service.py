@@ -3,7 +3,8 @@ from typing import List, Dict, Any, TYPE_CHECKING
 from src.services.base_service import BaseService
 from src.entities import User, Device
 from src.repositories.user_repo import UserRepository
-from src.drivers.adb.controller import ADBController
+# from src.drivers.adb.controller import ADBController
+from src.utils.logger import logger
 if TYPE_CHECKING:
     from src.drivers.redis._manager_redis import RedisStateFacade
 
@@ -46,7 +47,18 @@ class UserService(BaseService[User]):
         return self.update(user)
     
     def sync_users_from_adb_data(self, device: Device, users_data: List[User]):
-        users = self.repo.get_by_device(device_uuid=device.uuid)
-        print(users)
-        print(users_data) #[{'user_id': 0, 'user_name': 'root', 'user_status': 'active'}]
-        pass
+        existing_users = self.repo.get_by_device(device_uuid=device.uuid)
+        existing_user_dict = {str(u.user_id): u for u in existing_users}
+        adb_user_ids = set()
+                
+        for adb_user in users_data:
+            adb_user_ids.add(adb_user.user_id)
+            if str(adb_user.user_id) in existing_user_dict:
+                db_user = existing_user_dict[str(adb_user.user_id)]
+                db_user.user_name = adb_user.user_name
+                db_user.user_status = adb_user.user_status
+                self.update(db_user)
+            else:
+                adb_user.device_uuid = device.uuid
+                self.create(adb_user)
+                self.assign_to_device(adb_user.uuid, device.uuid)

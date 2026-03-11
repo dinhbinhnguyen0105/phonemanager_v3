@@ -1,8 +1,9 @@
 # src/models/table_model.py
+from typing import Any
 from PySide6.QtSql import QSqlTableModel, QSqlQuery
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, QModelIndex
 from PySide6.QtGui import QColor, QBrush
-from src.constants import DeviceStatus
+from src.constants import DeviceStatus, UserStatus
 
 
 # ==========================================
@@ -27,7 +28,7 @@ class BaseTableModel(QSqlTableModel):
                     i, Qt.Orientation.Horizontal, self.column_headers[col_name]
                 )
 
-    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any: # type: ignore
         if not index.isValid():
             return None
         if role == Qt.ItemDataRole.TextAlignmentRole:
@@ -72,7 +73,7 @@ class DeviceTableModel(BaseTableModel):
         super().__init__(db_manager, "devices", headers)
         self.setFilter(f"device_status = '{DeviceStatus.ONLINE.value}'")
 
-    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
             return None
             
@@ -155,12 +156,15 @@ class UserTableModel(BaseTableModel):
         self.refresh_caches()
         return super().select()
 
-    def data(self, index, role=Qt.ItemDataRole.DisplayRole):
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():
             return None
         if role == Qt.ItemDataRole.DisplayRole:
             col_name = self.record().fieldName(index.column())
             raw_value = super().data(index, Qt.ItemDataRole.EditRole)
+
+            if col_name == "user_status":
+                return UserStatus(raw_value).value.capitalize()
 
             if col_name == "device_uuid":
                 return self.device_map.get(raw_value, "---")
@@ -169,6 +173,8 @@ class UserTableModel(BaseTableModel):
                 return self.social_map.get(raw_value, "---")
         if role == Qt.ItemDataRole.ForegroundRole:
             col_name = self.record().fieldName(index.column())
+            # if col_name == "user_status":
+            #     return UserStatus.ACTIVE.value.capitalize() if 
             if col_name in ["device_uuid", "social_uuid"]:
                 raw_value = super().data(index, Qt.ItemDataRole.EditRole)
                 if not raw_value:

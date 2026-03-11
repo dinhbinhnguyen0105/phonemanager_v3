@@ -1,3 +1,0 @@
-10:49:47 - [32mSUCCESS[0m - [connection.py:173)] - Database tables initialized successfully.
-10:49:47 - [32mSUCCESS[0m - [_manager_services.py:31)] - Connected to Redis successfully.
-10:49:50 - [32mSUCCESS[0m - [user_controller.py:42)] - Successfully retrieved 1 profiles from device: QV70165B11

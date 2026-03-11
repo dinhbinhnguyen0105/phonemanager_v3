@@ -1,6 +1,6 @@
 # src/views/pages/home/user_table.py
 from typing import List
-from PySide6.QtWidgets import QTableView
+from PySide6.QtWidgets import QTableView, QAbstractItemView
 from PySide6.QtCore import Signal
 
 # Giả định import các class thực thể. Hãy điều chỉnh đường dẫn nếu cần thiết.
@@ -24,9 +24,9 @@ class UserTable(QTableView):
         self.setModel(self._model)
         
         # Cấu hình UI: Chọn nguyên dòng, cho phép chọn nhiều, và không cho sửa text trực tiếp
-        self.setSelectionBehavior(QTableView.SelectRows)
-        self.setSelectionMode(QTableView.ExtendedSelection) 
-        self.setEditTriggers(QTableView.NoEditTriggers)
+        self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
+        self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
+        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
 
         # Ẩn các cột hệ thống không cần thiết cho user
         self.hide_columns_by_name(["uuid", "created_at", "updated_at"])

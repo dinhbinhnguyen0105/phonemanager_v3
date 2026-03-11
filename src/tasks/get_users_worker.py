@@ -3,16 +3,14 @@ from typing import List
 from PySide6.QtCore import QObject, Signal, QRunnable
 from src.drivers.adb.controller import ADBController
 from src.utils.logger import logger
-from src.entities import User, Device # Thêm import Device
+from src.entities import User, Device
 from src.constants import UserStatus
 
 class GetUsersSignals(QObject):
-    # Thay vì truyền list, giờ truyền cả Device (object) và list
     success = Signal(object, list) 
     error = Signal(object, str)
 
 class GetUsersWorker(QRunnable):
-    # Đổi tham số nhận vào thành Device
     def __init__(self, device: Device): 
         super().__init__()
         self.device = device
@@ -30,9 +28,6 @@ class GetUsersWorker(QRunnable):
                     user_status=UserStatus(user_data.get("user_status", UserStatus.INACTIVE.value)),
                 )
                 results.append(user)
-
-            # Phóng tín hiệu mang theo Device và mảng User
             self.signals.success.emit(self.device, results)
         except Exception as e:
-            logger.error(f"[GetUsersWorker] Lỗi khi lấy danh sách user từ {self.device.device_id}: {e}")
             self.signals.error.emit(self.device, str(e))

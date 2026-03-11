@@ -23,13 +23,13 @@ class BaseController(QObject, Generic[T]):
     def get_by_id(self, pk: Any) -> Optional[T]:
         return self.service.get_by_id(pk)
 
-    def create(self, entity: T) -> T:
+    def create(self, entity: T) -> bool:
         try:
             return self.service.create(entity)
         except Exception as e:
             logger.error(f"Error creating entity: {e}")
             self.error_occurred.emit(str(e))
-            return None
+            return False
 
     def update(self, entity: T) -> bool:
         try:
