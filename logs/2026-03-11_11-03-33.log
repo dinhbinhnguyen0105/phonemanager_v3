@@ -1,0 +1,3 @@
+11:03:34 - [32mSUCCESS[0m - [connection.py:173)] - Database tables initialized successfully.
+11:03:34 - [32mSUCCESS[0m - [_manager_services.py:31)] - Connected to Redis successfully.
+11:03:41 - [32mSUCCESS[0m - [user_controller.py:37)] - Successfully retrieved 4 profiles from device: 3300e5705e058311

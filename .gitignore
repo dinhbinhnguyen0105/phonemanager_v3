@@ -3,6 +3,7 @@
 .vscode
 .database
 .results.json
+.logs
 dist
 build
 __pycache__/
