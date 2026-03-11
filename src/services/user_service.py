@@ -42,11 +42,11 @@ class UserService(BaseService[User]):
         if not user:
             return False
             
-        user.device_uuid = None
+        user.device_uuid = ""
         return self.update(user)
     
-    def sync_users_from_adb_data(self, device: Device, adb_users_data: List[Dict[str, Any]]):
+    def sync_users_from_adb_data(self, device: Device, users_data: List[User]):
         users = self.repo.get_by_device(device_uuid=device.uuid)
         print(users)
-        print(adb_users_data) #[{'user_id': 0, 'user_name': 'root', 'user_status': 'active'}]
+        print(users_data) #[{'user_id': 0, 'user_name': 'root', 'user_status': 'active'}]
         pass

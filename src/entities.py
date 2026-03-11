@@ -35,7 +35,7 @@ class BaseEntity:
         return data
 
     @classmethod
-    def from_dict(cls: Type[T], data: Dict[str, Any]) -> T:
+    def from_dict(cls: Type[T], data: Dict[str, Any]) -> Optional[T]:
         if not data:
             return None
         valid_keys = cls.__dataclass_fields__.keys()
@@ -57,15 +57,15 @@ class User(BaseEntity):
     user_id: int = 0
     user_name: str = "New profile"
     user_status: UserStatus = UserStatus.INACTIVE
-    device_uuid: str = field(default=None)
-    social_uuid: str = field(default=None)
+    device_uuid: str = field(default="")
+    social_uuid: str = field(default="")
 
 
 @dataclass
 class Social(BaseEntity):
     social_id: int = 0
     social_name: str = "New social"
-    social_password: str = field(default=None)
+    social_password: str = field(default="")
     social_status: int = 0
     social_group: int = 0
 
