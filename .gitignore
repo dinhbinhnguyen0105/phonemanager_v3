@@ -4,6 +4,7 @@
 .database
 .results.json
 logs
+repositories
 dist
 build
 __pycache__/
