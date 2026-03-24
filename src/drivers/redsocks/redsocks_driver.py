@@ -128,7 +128,6 @@ class RedsocksDriver:
         """Verifies the public IP address via proxy using IPv4."""
         try:
             res = self.adb._shell("su -c 'curl -4 -s -m 60 https://api.ipify.org'").strip()
-            logger.debug(res)
             return res
         except Exception:
             return ""
@@ -177,6 +176,7 @@ class RedsocksDriver:
         for _ in range(3):
             final_ip = self.verify_proxy()
             if final_ip and len(final_ip.split(".")) == 4:
+                logger.debug(f"Current IP: {final_ip}")
                 return final_ip
             time.sleep(3)
 

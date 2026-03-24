@@ -59,12 +59,24 @@ class JobExecutionWorker(QThread):
             if not job: 
                 continue
                 
+            # 1. Retrieve device information from the database
             device = self.controllers.device_controller.get_by_id(job.device_uuid)
+            
             if not device or device.device_status != DeviceStatus.ONLINE:
+                logger.debug(f"Device {job.device_uuid} is offline/busy in DB.")
                 self.redis_facade.jobs.requeue_job(job_data)
-                time.sleep(2)
+                time.sleep(120)
+                continue
+            lock_key = f"farm:device:lock:{device.device_id}"
+            is_locked = self.redis_facade.devices.redis.set(lock_key, "LOCKED", nx=True, ex=3600)
+            
+            if not is_locked:
+                logger.debug(f"Device {device.device_id} is currently locked by another worker.")
+                self.redis_facade.jobs.requeue_job(job_data)
+                time.sleep(120)
                 continue
 
+            # If locking is successful, proceed with UI updates and state transition
             device.device_status = DeviceStatus.WORKING
             self.request_update_device.emit(device)
             self.redis_facade.jobs.set_job_active(job.uuid, job_data)
@@ -79,6 +91,7 @@ class JobExecutionWorker(QThread):
                 device.device_status = DeviceStatus.ONLINE
                 self.request_update_device.emit(device)
                 self.redis_facade.jobs.remove_job_active(job.uuid)
+                
                 continue
                 
             proxy = None
@@ -88,7 +101,6 @@ class JobExecutionWorker(QThread):
                 is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)
                 if not is_setup_success:
                     if not proxy: 
-                        # self.message.emit(f"⏳ Out of available Proxies. Re-queuing Job '{job.name}'...")
                         self.controllers.service_manager.redis.jobs.requeue_job(job_data)
                     else: 
                         self.message.emit(f"❌ Setup error for Job '{job.name}': {msg}")
@@ -138,6 +150,7 @@ class JobExecutionWorker(QThread):
                 device.device_status = DeviceStatus.ONLINE
                 self.request_update_device.emit(device)
                 self.redis_facade.jobs.remove_job_active(job.uuid)
+                self.redis_facade.devices.redis.delete(lock_key)
                 # self.message.emit(f"✔️  Finished '{job.name}' on {device.device_name}")
     
     def stop(self):

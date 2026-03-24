@@ -22,6 +22,4 @@ def run_launch_app(device_id: str, job: Job, logger_signal):
     package_name = "com.zhiliaoapp.musically" 
     
     bot.launch_app(package_name, deeplink)
-    bot.smart_sleep(5)
-    
     bot.log("✔️  TikTok application is now ready.")

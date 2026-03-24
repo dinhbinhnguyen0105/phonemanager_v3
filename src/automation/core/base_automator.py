@@ -3,6 +3,7 @@ import re
 import os
 import time
 import posixpath
+from random import uniform
 import uiautomator2 as u2
 from typing import Optional, List
 from src.utils.logger import logger
@@ -81,14 +82,15 @@ class BaseAutomator:
             self.log(f"Starting application normally...")
             self.d.app_start(package_name)
 
-    def smart_sleep(self, seconds: int):
+    def smart_sleep(self, seconds: float = 0):
         """
         Performs a timed pause in execution.
         
         Args:
             seconds (int): Duration to sleep in seconds.
         """
-        time.sleep(seconds)
+        s = uniform(1, 3) if not seconds else seconds
+        time.sleep(s)
     
     def get_user_media_path(self, user_id: int) -> str:
         """
@@ -107,31 +109,39 @@ class BaseAutomator:
     
     def push_media(self, local_paths: List[str], user_id: int):
         """
-        Pushes media files to the device by writing directly to the physical 
-        storage (/data/media/) to bypass Multi-user permission restrictions.
-        
-        The process involves:
-        1. Creating the physical directory with root privileges.
-        2. Setting ownership to 'media_rw' so the Android OS can index the files.
-        3. Pushing files via a temporary buffer to ensure integrity.
-        4. Triggering a system broadcast to update the Media Store immediately.
+        Transfers media files to the device storage with support for multiple user profiles.
+
+        This method optimizes the transfer based on the target Android user:
+        - For User 0 (Primary): Pushes directly to virtual storage using standard ADB commands.
+        - For Secondary Users: Utilizes Root privileges to write directly to physical storage 
+          (/data/media/) to bypass Multi-user permission restrictions, then updates ownership 
+          to the media system.
 
         Args:
-            local_paths (List[str]): List of local file paths to push.
+            local_paths (List[str]): List of local file paths to be transferred.
             user_id (int): The target Android user profile ID.
         """
+        user_id = int(user_id)
         virtual_dir = self.get_user_media_path(user_id)
+        
         if not virtual_dir.endswith('/'):
             virtual_dir += '/'
             
-        physical_dir = f"/data/media/{user_id}/Pictures/PhoneFarm/"
-        
-        self.d.shell(
-            f"su -c 'mkdir -p \"{physical_dir}\" "
-            f"&& chown media_rw:media_rw \"{physical_dir}\" "
-            f"&& chmod 775 \"{physical_dir}\"'"
-        )
-        
+        # 1. Directory Creation
+        if user_id == 0:
+            self.d.shell(f"mkdir -p \"{virtual_dir}\"")
+        else:
+            physical_dir = f"/data/media/{user_id}/Pictures/PhoneFarm/"
+            res_mkdir = self.d.shell(
+                f"su -c 'mkdir -p \"{physical_dir}\" "
+                f"&& chown media_rw:media_rw \"{physical_dir}\" "
+                f"&& chmod 775 \"{physical_dir}\"'"
+            )
+            if res_mkdir.exit_code != 0:
+                self.log(f"❌ Failed to create physical directory for User {user_id}: {res_mkdir.output}")
+                return
+
+        # 2. File Transfer Process
         for local_path in local_paths:
             if not os.path.exists(local_path):
                 self.log(f"⚠️ Local file not found: {local_path}")
@@ -139,67 +149,100 @@ class BaseAutomator:
                 
             file_name = os.path.basename(local_path)
             virtual_path = posixpath.join(virtual_dir, file_name)
-            physical_path = posixpath.join(physical_dir, file_name)
-            tmp_path = posixpath.join("/data/local/tmp", file_name)
             
-            try:
-                self.d.push(local_path, tmp_path)
-                
-                copy_cmd = (
-                    f"su -c 'cp -f \"{tmp_path}\" \"{physical_path}\" "
-                    f"&& chown media_rw:media_rw \"{physical_path}\" "
-                    f"&& chmod 664 \"{physical_path}\"'"
-                )
-                res_cp = self.d.shell(copy_cmd)
-                
-                if res_cp.exit_code != 0:
-                    self.log(f"❌ Physical copy failed for {file_name}: {res_cp.output}")
-                    continue
+            max_retries = 3
+            for attempt in range(max_retries):
+                """
+                Implements an anti-ADB timeout retry loop. 
+                Ensures large media files are pushed reliably even under heavy USB hub load.
+                """
+                try:
+                    if user_id == 0:
+                        # Direct push for the primary user
+                        self.d.push(local_path, virtual_path)
+                    else:
+                        # Buffered push for secondary users via /tmp and Root copy
+                        physical_path = posixpath.join(f"/data/media/{user_id}/Pictures/PhoneFarm/", file_name)
+                        tmp_path = posixpath.join("/data/local/tmp", file_name)
+                        
+                        self.d.push(local_path, tmp_path)
+                        
+                        copy_cmd = (
+                            f"su -c 'cp -f \"{tmp_path}\" \"{physical_path}\" "
+                            f"&& chown media_rw:media_rw \"{physical_path}\" "
+                            f"&& chmod 664 \"{physical_path}\"'"
+                        )
+                        
+                        # Increased timeout to 120s for physical copy of large files
+                        res_cp = self.d.shell(copy_cmd, timeout=120)
+                        
+                        if res_cp.exit_code != 0:
+                            self.log(f"❌ Physical copy error for {file_name}: {res_cp.output}")
+                            # Exit retry loop for permanent errors (permissions/disk full)
+                            break 
+                            
+                        self.d.shell(f"rm \"{tmp_path}\"", timeout=60)
                     
-                self.d.shell(f"rm \"{tmp_path}\"")
-                
-                self.pushed_files.append((virtual_path, user_id)) 
-                
-                target_user = user_id if int(user_id) != 0 else 0
-                self.d.shell(
-                    f"am broadcast --user {target_user} "
-                    f"-a android.intent.action.MEDIA_SCANNER_SCAN_FILE "
-                    f"-d file://{virtual_path}"
-                )
-                
-            except Exception as e:
-                self.log(f"❌ Media push process error for {file_name}: {e}")
+                    # 3. Track File and Trigger Media Scanner
+                    self.pushed_files.append((virtual_path, user_id)) 
+                    
+                    self.d.shell(
+                        f"am broadcast --user {user_id} "
+                        f"-a android.intent.action.MEDIA_SCANNER_SCAN_FILE "
+                        f"-d file://{virtual_path}", 
+                        timeout=60
+                    )
+                    
+                    # Success: break the retry loop to process the next file
+                    break 
+                    
+                except Exception as e:
+                    error_msg = str(e).lower()
+                    if "timeout" in error_msg or "closed" in error_msg:
+                        if attempt < max_retries - 1:
+                            self.log(f"⚠️ ADB Timeout while pushing '{file_name}'. Retrying {attempt + 2}/{max_retries}...")
+                            self.smart_sleep(2) # Cooldown to let USB bandwidth/ADB stabilize
+                            continue
+                    
+                    self.log(f"❌ Media push process error for {file_name}: {e}")
+                    break # Skip current file on non-timeout errors or final attempt failure
                 
         self.log(f"📤 Successfully pushed {len(self.pushed_files)} files to device {self.device_id}")
     
     def verify_media_exists(self, local_paths: List[str], user_id: int) -> bool:
         """
-        Verifies if the specified image or video files exist in the designated Android user's storage.
+        Verifies if the specified media files exist in the designated Android user's storage.
 
-        This method checks the existence of remote files by mapping local filenames to the 
-        expected remote paths for a specific Android user profile. It uses the shell 'ls' 
-        command to confirm the presence of each file.
+        This method branches its verification logic based on the User ID:
+        - For User 0: Directly checks virtual storage via standard shell.
+        - For Secondary Users: Uses Root privileges to check the physical storage 
+          (/data/media/) to ensure bypass of Multi-user restrictions.
 
         Args:
-            local_paths (List[str]): List of original local file paths (used to extract filenames).
+            local_paths (List[str]): List of original local file paths to extract filenames.
             user_id (int): The Android user profile ID (e.g., 0, 10, 11).
 
         Returns:
-            bool: True if ALL files exist on the device, False if at least one file is missing.
+            bool: True if ALL files exist on the device, False if at least one is missing.
         """
+        user_id = int(user_id)
         self.log(f"Verifying media data for User {user_id}...")
         
-        remote_dir = self.get_user_media_path(user_id)
-        if not remote_dir.endswith('/'):
-            remote_dir += '/'
+        virtual_dir = self.get_user_media_path(user_id)
+        if not virtual_dir.endswith('/'):
+            virtual_dir += '/'
             
         all_exist = True
         
         for local_path in local_paths:
             file_name = os.path.basename(local_path)
-            remote_path = posixpath.join(remote_dir, file_name)
             
-            result = self.d.shell(f"ls '{remote_path}'")
+            if user_id == 0:
+                virtual_path = posixpath.join(virtual_dir, file_name)
+                result = self.d.shell(f"ls \"{virtual_path}\"")
+            else:
+                physical_path = posixpath.join(f"/data/media/{user_id}/Pictures/PhoneFarm/", file_name)
+                result = self.d.shell(f"su -c 'ls \"{physical_path}\"'")
             
             if result.exit_code == 0:
                 self.log(f"✔️ Confirmed: {file_name} exists on device.")
@@ -217,12 +260,14 @@ class BaseAutomator:
     def cleanup_media(self):
         """
         Removes previously pushed media files from the device storage.
+
+        This method handles file deletion based on the User ID:
+        - For User 0: Standard deletion from virtual storage.
+        - For Secondary Users: Uses Root to delete physical files directly from 
+          the /data/media/ partition to prevent permission errors.
         
-        This method utilizes Root privileges to delete physical files directly 
-        from the /data/media/ partition, bypassing 'Permission Denied' errors 
-        commonly encountered in Android Multi-user environments. It also 
-        triggers the Media Scanner to remove the deleted entries from the 
-        system gallery.
+        Finally, it triggers the Android Media Scanner for the specific user to 
+        ensure the files are removed from the system gallery database.
         """
         if not self.pushed_files:
             return
@@ -233,28 +278,23 @@ class BaseAutomator:
         
         for virtual_path, user_id in self.pushed_files: 
             file_name = os.path.basename(virtual_path)
+            user_id = int(user_id)
             
-            # 1. Define physical path for direct root deletion
-            physical_path = f"/data/media/{user_id}/Pictures/PhoneFarm/{file_name}"
-            
-            # 2. Execute physical deletion
-            rm_cmd = f"rm -f \"{physical_path}\""
-            if int(user_id) != 0:
-                rm_cmd = f"su -c '{rm_cmd}'"
+            if user_id == 0:
+                self.d.shell(f"rm -f \"{virtual_path}\"")
+            else:
+                physical_path = f"/data/media/{user_id}/Pictures/PhoneFarm/{file_name}"
+                self.d.shell(f"su -c 'rm -f \"{physical_path}\"'")
                 
-            self.d.shell(rm_cmd)
-            
-            # 3. Trigger Media Scanner to unregister the file from the Gallery
-            target_user = user_id if int(user_id) != 0 else 0
             self.d.shell(
-                f"am broadcast --user {target_user} "
-                f"-a android.intent.action.MEDIA_SCANNER_SCAN_FILE "
+                f"am broadcast --user {user_id} " 
+                f"-a android.intent.action.MEDIA_SCANNER_SCAN_FILE " 
                 f"-d file://{virtual_path}"
             )
             
         self.pushed_files.clear()
         self.log("✔️ Media cleanup complete. Device storage is now clean!")
-        
+    
     def teardown(self):
         """
         Performs resource cleanup after an automation job completes.
@@ -579,3 +619,4 @@ class BaseAutomator:
                 
         self.log(f"⚠️ Swiped {max_swipes} times; may not have reached the absolute top.")
         return False
+    

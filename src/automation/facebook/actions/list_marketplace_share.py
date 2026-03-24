@@ -27,9 +27,7 @@ def run_list_marketplace_share(device_id: str, job: Job, logger_signal: "SignalI
         user_info = controllers.user_controller.get_by_id(job.user_uuid)
         user_id = user_info.user_id if user_info else 0
     else:
-        user_id = 0
-    
-    
+        user_id = 0 
     
     try:
         image_paths = job.parameters.get("image_paths")
@@ -55,6 +53,8 @@ def run_list_marketplace_share(device_id: str, job: Job, logger_signal: "SignalI
         _fill_listing_details(bot, job.parameters)
         _click_next_button(bot)
         _list_more_place(bot)
+        _click_publish_button(bot)
+        bot.smart_sleep(10)
 
     except Exception as e:
         exc_type, exc_value, exc_traceback = sys.exc_info()
@@ -315,6 +315,50 @@ def _list_more_place(bot: BaseAutomator):
         if sig1 == sig2:
             break
 
+def _click_publish_button(bot: BaseAutomator):
+    """
+    Clicks the 'Publish' button to finalize the listing or proceed to cross-posting.
+    
+    This method implements a two-tier strategy for high reliability:
+    1. Primary: Targets the specific Facebook 'resourceId' (mp_composer_post), 
+       which is the most stable identifier for this action.
+    2. Fallback: Reverts to a text-based search if the resource ID is not found 
+       (e.g., due to a UI update).
+
+    Args:
+        bot (BaseAutomator): The automation controller instance.
+
+    Returns:
+        bool: True if the button was clicked and successfully disappeared from the UI.
+
+    Raises:
+        Exception: If the button is clicked but the app hangs, or if the button 
+                  cannot be found using either the ID or text fallback.
+    """
+    bot.log("Locating and clicking the 'Publish' button...")
+    
+    publish_btn = bot.d(resourceId="mp_composer_post")
+    
+    if publish_btn.exists(timeout=10):
+        publish_btn.click_exists(timeout=5)
+        is_published = publish_btn.wait_gone(timeout=15)
+        
+        if is_published:
+            bot.log("✔️ 'Publish' button clicked successfully!")
+            return True
+        else:
+            raise Exception("Clicked 'Publish' but the application failed to respond or load.")
+            
+    else:
+        bot.log("⚠️ Resource ID 'mp_composer_post' not found, attempting text-based search...")
+        is_published = bot.click_button_with_retry("publish", timeout=10)
+        
+        if not is_published:
+            raise Exception("Could not find or interact with the 'Publish' button using ID or text.")
+            
+        return is_published
+
+
 def _parse_member_count(desc: str) -> int:
     """
     Helper function: Parses member count from content-description strings.
@@ -336,3 +380,4 @@ def _parse_member_count(desc: str) -> int:
         return int(num)
     except:
         return 0
+    

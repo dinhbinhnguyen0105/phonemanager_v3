@@ -142,7 +142,7 @@ class ExternalDataService:
         
         product_id = product_dict.get("id")
         img_dir = os.path.join(
-            self.image_container_dir, str(product_id), f"source_{product_id}"
+            self.image_container_dir, str(product_id), f"logo_{product_id}"
         )
         result["image_paths"] = self.get_images_from_folder(img_dir)
 

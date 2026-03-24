@@ -156,6 +156,37 @@ class FacebookPage(QWidget, Ui_page__facebooks):
         hidden_columns = ["uuid", "user_uuid", "proxy_uuid", "created_at", "updated_at", "social_platform"]
         self._hide_columns(hidden_columns)
 
+    def _apply_filters(self):
+        """
+        Applies dynamic SQL filtering to the table model based on search inputs.
+
+        This method retrieves text from various search input fields, sanitizes the 
+        input by stripping whitespace, and constructs a SQL 'WHERE' clause. It 
+        supports partial matches using the 'LIKE' operator and combines multiple 
+        criteria using 'AND' logic. The resulting filter is applied to the 
+        social_model to refresh the displayed data.
+        """
+        if not self.social_model:
+            return
+            
+        uid_text = self.page__facebooks_search_uid_input.text().strip()
+        username_text = self.page__facebooks_search_username_input.text().strip()
+        group_text = self.page__facebooks_search_group_input.text().strip()
+        
+        filter_conditions = ["social_platform = 'facebook'"]
+        
+        if uid_text:
+            filter_conditions.append(f"social_id LIKE '%{uid_text}%'")
+        if username_text:
+            filter_conditions.append(f"social_name LIKE '%{username_text}%'")
+        if group_text:
+            filter_conditions.append(f"social_group LIKE '%{group_text}%'")
+            
+        final_filter = " AND ".join(filter_conditions)
+        
+        self.social_model.setFilter(final_filter)
+        self.social_model.select()
+
     def _setup_actions_panel(self):
         """Configures the side panel for dynamic action configuration and job preview."""
         self.page__facebooks_actions_scrollarea.setFixedWidth(380)
@@ -192,6 +223,10 @@ class FacebookPage(QWidget, Ui_page__facebooks):
         
         self.controllers.device_controller.device_state_changed.connect(self.refresh_data)
         self.logic.delete_completed.connect(self.refresh_data)
+
+        self.page__facebooks_search_uid_input.textChanged.connect(self._apply_filters)
+        self.page__facebooks_search_username_input.textChanged.connect(self._apply_filters)
+        self.page__facebooks_search_group_input.textChanged.connect(self._apply_filters)
 
     def _parse_social_from_record(self, record) -> Social:
         """Helper to convert a table record into a Social entity object."""
@@ -448,7 +483,10 @@ class FacebookPage(QWidget, Ui_page__facebooks):
             return
             
         self.logic.push_jobs_to_redis(self.pending_jobs)
-        
+        msg = f"✔️ Add to {len(self.pending_jobs)} pending jobs to redis"
+        logger.success(msg)
+        self.message.emit(msg)
+
         self.pending_jobs.clear()
         self._render_pending_jobs()
 

@@ -21,7 +21,5 @@ def run_launch_app(device_id: str, job: Job, logger_signal):
     deeplink = job.parameters.get("deeplink")
     package_name = "com.facebook.katana"
     
-    bot.launch_app(package_name, deeplink)
-    bot.smart_sleep(5)
-    
+    bot.launch_app(package_name, deeplink)    
     bot.log("✔️  Facebook application is now ready.")

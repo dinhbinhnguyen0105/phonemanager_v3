@@ -164,7 +164,7 @@ class ProxyController(BaseController[Proxy]):
                         if len(parts) >= 2:
                             proxy.host = parts[0]
                             proxy.port = int(parts[1])
-                            logger.debug(proxy_http)
+                            logger.debug(f"Using proxy: {proxy.host}:{proxy.port}")
                             if set_working:
                                 proxy.proxy_status = ProxyStatus.WORKING
                                 self.update(proxy)
