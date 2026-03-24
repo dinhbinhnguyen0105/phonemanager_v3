@@ -6,6 +6,7 @@
 logs
 repositories/images
 repositories/screenshots
+repositories/apks
 dist
 build
 __pycache__/
