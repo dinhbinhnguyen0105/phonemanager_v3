@@ -63,7 +63,7 @@ class BaseRepository(Generic[T]):
             query += " WHERE is_deleted = 0"
 
         rows = self.db.fetch_all(query)
-        return [self._row_to_entity(r) for r in rows]
+        return [self._row_to_entity(r) for r in rows] # type: ignore
 
     def get_all_paginated(self, limit: int, offset: int = 0) -> List[T]:
         query = f"SELECT * FROM {self.table_name}"
@@ -73,7 +73,7 @@ class BaseRepository(Generic[T]):
         query += " LIMIT ? OFFSET ?"
 
         rows = self.db.fetch_all(query, (limit, offset))
-        return [self._row_to_entity(r) for r in rows]
+        return [self._row_to_entity(r) for r in rows] # type: ignore
 
     def get_by_id(self, pk_value: Any) -> Optional[T]:
         if pk_value is None:
@@ -111,7 +111,7 @@ class BaseRepository(Generic[T]):
         query = f"SELECT * FROM {self.table_name} WHERE {where_clause}"
 
         rows = self.db.fetch_all(query, tuple(values))
-        return [self._row_to_entity(r) for r in rows]
+        return [self._row_to_entity(r) for r in rows] # type: ignore
         
     def get_one_by_fields(self, filters: Dict[str, Any]) -> Optional[T]:
         """

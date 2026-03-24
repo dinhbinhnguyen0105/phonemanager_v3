@@ -72,6 +72,28 @@ class Ui_sidebar(object):
 
         self.verticalLayout.addWidget(self.sidebar__home_container)
 
+        self.sidebar__devices_container = QWidget(sidebar)
+        self.sidebar__devices_container.setObjectName(u"sidebar__devices_container")
+        self.horizontalLayout_7 = QHBoxLayout(self.sidebar__devices_container)
+        self.horizontalLayout_7.setObjectName(u"horizontalLayout_7")
+        self.sidebar__device_layout = QHBoxLayout()
+        self.sidebar__device_layout.setObjectName(u"sidebar__device_layout")
+        self.sidebar__device_icon = QLabel(self.sidebar__devices_container)
+        self.sidebar__device_icon.setObjectName(u"sidebar__device_icon")
+
+        self.sidebar__device_layout.addWidget(self.sidebar__device_icon)
+
+        self.sidebar__device_layout1 = QLabel(self.sidebar__devices_container)
+        self.sidebar__device_layout1.setObjectName(u"sidebar__device_layout1")
+
+        self.sidebar__device_layout.addWidget(self.sidebar__device_layout1)
+
+
+        self.horizontalLayout_7.addLayout(self.sidebar__device_layout)
+
+
+        self.verticalLayout.addWidget(self.sidebar__devices_container)
+
         self.sidebar__users_container = QWidget(sidebar)
         self.sidebar__users_container.setObjectName(u"sidebar__users_container")
         self.horizontalLayout_3 = QHBoxLayout(self.sidebar__users_container)
@@ -179,6 +201,8 @@ class Ui_sidebar(object):
         self.sidebar__products_label.setText(QCoreApplication.translate("sidebar", u"Products", None))
         self.sidebar__home_icon.setText(QCoreApplication.translate("sidebar", u"home_icon", None))
         self.sidebar__home_label.setText(QCoreApplication.translate("sidebar", u"Home", None))
+        self.sidebar__device_icon.setText(QCoreApplication.translate("sidebar", u"device_icon", None))
+        self.sidebar__device_layout1.setText(QCoreApplication.translate("sidebar", u"Devices", None))
         self.sidebar__users_icon.setText(QCoreApplication.translate("sidebar", u"user_icon", None))
         self.sidebar__users_label.setText(QCoreApplication.translate("sidebar", u"Users", None))
         self.sidebar__fbaccount_icon.setText(QCoreApplication.translate("sidebar", u"fb_icon", None))

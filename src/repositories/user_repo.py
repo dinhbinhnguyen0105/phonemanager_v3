@@ -16,6 +16,9 @@ class UserRepository(BaseRepository[User]):
             pk_name="uuid",
             soft_delete=False
         )
+    
+    def insert(self, entity: User) -> bool:
+        return super().insert(entity)
         
     def get_by_device(self, device_uuid: str) -> List[User]:
         """Retrieves a list of user profiles assigned to a specific device."""

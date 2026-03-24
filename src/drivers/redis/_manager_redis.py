@@ -1,5 +1,5 @@
 # src/drivers/redis/_manager_redis.py
-
+from typing import Awaitable
 from src.drivers.redis.redis_manager import RedisStateManager
 from src.drivers.redis.device_state import DeviceState
 from src.drivers.redis.proxy_state import ProxyState
@@ -21,7 +21,7 @@ class RedisStateFacade:
         self.proxies = ProxyState(self.client)
         self.jobs = JobState(self.client)
         
-    def ping(self) -> bool:
+    def ping(self) -> Awaitable[bool] | bool:
         """
         Verifies the connection to the Redis server.
         

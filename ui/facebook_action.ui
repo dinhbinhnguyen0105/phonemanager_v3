@@ -48,12 +48,7 @@
       <widget class="QComboBox" name="action__actions_option">
        <item>
         <property name="text">
-         <string>List in marketplace</string>
-        </property>
-       </item>
-       <item>
-        <property name="text">
-         <string>New feed</string>
+         <string>--- Select Action ---</string>
         </property>
        </item>
       </widget>
@@ -61,12 +56,12 @@
      <item row="1" column="0">
       <widget class="QStackedWidget" name="action__content">
        <property name="currentIndex">
-        <number>1</number>
+        <number>3</number>
        </property>
-       <widget class="QWidget" name="action__content_listbymarketplace">
+       <widget class="QWidget" name="action__content_list_marketplace_container">
         <layout class="QVBoxLayout" name="verticalLayout_3">
          <item>
-          <layout class="QVBoxLayout" name="action__content_listbymarketplace_layout">
+          <layout class="QVBoxLayout" name="action__content_list_marketplace_layout">
            <property name="spacing">
             <number>0</number>
            </property>
@@ -74,10 +69,31 @@
          </item>
         </layout>
        </widget>
-       <widget class="QWidget" name="action__content_newfeed">
+       <widget class="QWidget" name="action__content_scroll_feed_container">
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <item>
-          <layout class="QVBoxLayout" name="action__content_newfeed_layout"/>
+          <layout class="QVBoxLayout" name="action__content_scroll_feed_layout"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="action__content_interact_feed_container">
+        <layout class="QVBoxLayout" name="verticalLayout">
+         <item>
+          <layout class="QVBoxLayout" name="action__content_interact_feed_layout"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="action__content_interact_target_container">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <item>
+          <layout class="QVBoxLayout" name="action__content_interact_target_layout"/>
+         </item>
+        </layout>
+       </widget>
+       <widget class="QWidget" name="action__content_post_group_container">
+        <layout class="QVBoxLayout" name="verticalLayout_6">
+         <item>
+          <layout class="QVBoxLayout" name="action__content_post_group_layout"/>
          </item>
         </layout>
        </widget>

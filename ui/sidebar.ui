@@ -68,6 +68,30 @@
       </widget>
      </item>
      <item>
+      <widget class="QWidget" name="sidebar__devices_container" native="true">
+       <layout class="QHBoxLayout" name="horizontalLayout_7">
+        <item>
+         <layout class="QHBoxLayout" name="sidebar__device_layout">
+          <item>
+           <widget class="QLabel" name="sidebar__device_icon">
+            <property name="text">
+             <string>device_icon</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="sidebar__device_layout">
+            <property name="text">
+             <string>Devices</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
       <widget class="QWidget" name="sidebar__users_container" native="true">
        <layout class="QHBoxLayout" name="horizontalLayout_3">
         <item>

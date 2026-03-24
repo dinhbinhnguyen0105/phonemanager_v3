@@ -99,11 +99,54 @@ class SocialTableModel(BaseTableModel):
     def __init__(self, db_manager):
         headers = {
             "social_id": "Social UID",
+            "user_uuid": "Profile UUID",
             "social_name": "Account Name",
             "social_status": "Status",
             "social_group": "Group",
+            "social_platform": "Platform",
+            "social_password": "Password",
         }
         super().__init__(db_manager, "socials", headers)
+        self.device_status_map = {}
+        self.refresh_caches()
+
+    def refresh_caches(self):
+        """Map uuid của Social với device_status của Device tương ứng"""
+        self.device_status_map = {}
+        query = QSqlQuery("""
+            SELECT s.uuid, d.device_status 
+            FROM socials s
+            LEFT JOIN users u ON s.user_uuid = u.uuid
+            LEFT JOIN devices d ON u.device_uuid = d.uuid
+        """, self.database())
+        while query.next():
+            self.device_status_map[query.value(0)] = query.value(1)
+
+    def select(self):
+        self.refresh_caches()
+        return super().select()
+    
+    def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
+        if not index.isValid():
+            return None
+            
+        if role == Qt.ItemDataRole.BackgroundRole:
+            social_uuid = self.record(index.row()).value("uuid")
+            dev_status = self.device_status_map.get(social_uuid)
+            
+            if not dev_status or str(dev_status).lower() != "online":
+                return QBrush(QColor("#e2e5e9"))
+            return QBrush(QColor("#e8f8f5"))
+            
+        if role == Qt.ItemDataRole.DisplayRole:
+            col_name = self.record().fieldName(index.column())
+            val = super().data(index, Qt.ItemDataRole.EditRole)
+
+            if col_name == "social_status":
+                return "Live" if int(val or 0) == 1 else "Dead"
+
+        return super().data(index, role)
+
 
 
 # ==========================================
@@ -134,7 +177,6 @@ class UserTableModel(BaseTableModel):
             "user_name": "Profile Name",
             "user_status": "Status",
             "device_uuid": "Device",
-            "social_uuid": "Social Account",
         }
 
         super().__init__(db_manager, "users", headers)

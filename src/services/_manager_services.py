@@ -4,6 +4,7 @@ from src.services.user_service import UserService
 from src.services.social_service import SocialService
 from src.services.proxy_service import ProxyService
 from src.services.job_service import JobService
+from src.services.external_data_service import ExternalDataService
 
 from src.utils.logger import logger
 from src.repositories._manager_repositories import RepositoryManager
@@ -23,6 +24,7 @@ class ServiceManager:
         self.socials = SocialService(self.repos.socials, self.redis)
         self.proxies = ProxyService(self.repos.proxies, self.redis)
         self.jobs = JobService(self.redis)
+        self.external_db = ExternalDataService(self.repos.external_db)
 
     def init_system(self):
         """Initializes the database and creates tables if they do not exist."""

@@ -1,0 +1,241 @@
+real_estate_product:
+  transactions:
+    - bán
+    - cho thuê
+    - sang nhượng
+  status:
+    - không khả dụng
+    - khả dụng
+  categories:
+    - nhà phố
+    - nhà mặt tiền
+    - căn hộ/ chung cư
+    - biệt thự
+    - đất nền
+    - kho/bãi
+    - mbkd
+    - khách sạn
+    - homestay
+  provinces:
+    - lâm đồng
+  districts:
+    - đà lạt
+  wards:
+    - phường 1 (p.xuân hương)
+    - phường 2 (p.xuân hương)
+    - phường 3 (p.xuân hương)
+    - phường 4 (p.xuân hương)
+    - phường 5 (p.cam ly)
+    - phường 6 (p.cam ly)
+    - phường 7 (p.lang biang)
+    - phường 8 (p.lâm viên)
+    - phường 9 (p.lâm viên)
+    - phường 10 (p.xuân hương)
+    - phường 11 (p.xuân trường)
+    - phường 12 (p.lâm viên)
+    - xã xuân trường (p.xuân trường)
+    - xã xuân thọ (p.xuân trường)
+    - xã tà nung (p.cam ly)
+    - xã trạm hành (p.xuân trường)
+    - thị trấn lạc dương (p.lang biang)
+  building_lines:
+    - đường xe hơi
+    - đường xe máy
+  legals:
+    - mua bán vi bằng
+    - sổ nông nghiệp chung
+    - sổ nông nghiệp phân quyền
+    - sổ nông nghiệp riêng
+    - sổ xây dựng chung
+    - sổ xây dựng phân quyền
+    - sổ xây dựng riêng
+  furniture:
+    - không nội thất
+    - nội thất cơ bản
+    - đầy đủ nội thất
+  units:
+    - tỷ
+    - triệu/tháng
+
+contact:
+  phone_number:
+    - 0375 155 525
+    - 0866085587
+  phone_icon:
+    - 0️⃣3️⃣7️⃣5️⃣ 1️⃣5️⃣5️⃣ 5️⃣2️⃣5️⃣
+    - 0️⃣8️⃣6️⃣6️⃣0️⃣8️⃣5️⃣5️⃣8️⃣7️⃣
+  name:
+    - Đ. Bình
+icons:
+  - 🌼
+  - 🌸
+  - 🌺
+  - 🏵️
+  - 🌻
+  - 🌷
+  - 🌹
+  - 🥀
+  - 💐
+  - 🌾
+  - 🎋
+  - ☘
+  - 🍀
+  - 🍃
+  - 🍂
+  - 🍁
+  - 🌱
+  - 🌿
+  - 🎍
+  - 🌵
+  - 🌴
+  - 🌳
+  - 🎄
+  - 🍄
+  - 🌎
+  - 🌍
+  - 🌏
+  - 🌜
+  - 🌛
+  - 🌕
+  - 🌖
+  - 🌗
+  - 🌘
+  - 🌑
+  - 🌒
+  - 🌓
+  - 🌔
+  - 🌚
+  - 🌝
+  - 🌙
+  - 💫
+  - ⭐
+  - 🌟
+  - ✨
+  - ⚡
+  - 🔥
+  - 💥
+  - ☄️
+  - 🌞
+  - ☀️
+  - 🌤️
+  - ⛅
+  - 🌥️
+  - 🌦️
+  - ☁️
+  - 🌧️
+  - ⛈️
+  - 🌩️
+  - 🌨️
+  - 🌈
+  - 💧
+  - 💦
+  - ☂️
+  - ☔
+  - 🌊
+  - 🌫
+  - 🌪
+  - 💨
+  - ❄
+  - 🌬
+  - ⛄
+  - ☃️
+  - ♥️
+  - ❤️
+  - 💛
+  - 💚
+  - 💙
+  - 💜
+  - 🖤
+  - 💖
+  - 💝
+  - 💔
+  - ❣️
+  - 💕
+  - 💞
+  - 💓
+  - 💗
+  - 💘
+  - 💟
+  - 💌
+  - 💋
+  - 👄
+  - 💄
+  - 💍
+  - 📿
+  - 🎁
+  - 👙
+  - 👗
+  - 👚
+  - 👕
+  - 👘
+  - 🎽
+  - 👘
+  - 👖
+  - 👠
+  - 👡
+  - 👢
+  - 👟
+  - 👞
+  - 👒
+  - 🎩
+  - 🎓
+  - 👑
+  - ⛑️
+  - 👓
+  - 🕶️
+  - 🌂
+  - 👛
+  - 👝
+  - 👜
+  - 💼
+  - 🎒
+  - 🛍️
+  - 🛒
+  - 🎭
+  - 🎦
+  - 🎨
+  - 🤹
+  - 🎊
+  - 🎉
+  - 🎈
+  - 🎧
+  - 🎷
+  - 🎺
+  - 🎸
+  - 🎻
+  - 🥁
+  - 🎹
+  - 🎤
+  - 🎵
+  - 🎶
+  - 🎼
+  - ⚽
+  - 🏀
+  - 🏈
+  - ⚾
+  - 🏐
+  - 🏉
+  - 🎱
+  - 🎾
+  - 🏸
+  - 🏓
+  - 🏏
+  - 🏑
+  - 🏒
+  - 🥅
+  - ⛸️
+  - 🎿
+  - 🥊
+  - 🥋
+  - ⛳
+  - 🎳
+  - 🏹
+  - 🎣
+  - 🎯
+  - 🚵
+  - 🎖️
+  - 🏅
+  - 🥇
+  - 🥈
+  - 🥉
+  - 🏆

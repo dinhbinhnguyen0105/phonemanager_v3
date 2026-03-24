@@ -1,7 +1,7 @@
 # src/tasks/get_users_worker.py
 from typing import List
 from PySide6.QtCore import QObject, Signal, QRunnable
-from src.drivers.adb.controller import ADBController
+from src.drivers.adb.adb_controller import ADBController
 from src.utils.logger import logger
 from src.entities import User, Device
 from src.constants import UserStatus

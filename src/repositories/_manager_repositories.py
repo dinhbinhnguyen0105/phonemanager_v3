@@ -5,6 +5,7 @@ from src.repositories.device_repo import DeviceRepository
 from src.repositories.user_repo import UserRepository
 from src.repositories.social_repo import SocialRepository
 from src.repositories.proxy_repo import ProxyRepository
+from src.repositories.external_data_repo import ExternalDataRepository
 
 class RepositoryManager:
     """
@@ -18,6 +19,7 @@ class RepositoryManager:
         self.users = UserRepository(self.db)
         self.socials = SocialRepository(self.db)
         self.proxies = ProxyRepository(self.db)
+        self.external_db = ExternalDataRepository()
 
     def init_database(self) -> bool:
         """Runs the schema initialization to create tables if they do not exist."""

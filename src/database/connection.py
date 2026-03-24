@@ -30,7 +30,7 @@ class DatabaseManager:
     """
 
     def __init__(self):
-        self.database_path = os.path.join(BASE_DIR, settings.database.database_path)
+        self.database_path = os.path.join(BASE_DIR, settings.repositories.database_path) # type: ignore
         self._ensure_database_directory()
 
     # --------------------------------------------------
@@ -182,15 +182,25 @@ class DatabaseManager:
     # --------------------------------------------------
 
     def execute(
-        self, query_string: str, params: Optional[Tuple] = None
+        self, query_string: str, params: Optional[Any] = None
     ) -> Tuple[bool, str]:
         self._ensure_connection()
 
         query = QSqlQuery(self.db)
         if params:
-            query.prepare(query_string)
-            for param in params:
+            if not query.prepare(query_string):
+                error = query.lastError().text()
+                logger.error(f"🚨 DB STRUCTURE ERROR (Prepare Error): {error}")
+                logger.debug(f"SQL query: {query_string}")
+                return False, error
+            
+            if isinstance(params, dict):
+                bind_values = list(params.values())
+            else:
+                bind_values = params
+            for param in bind_values:
                 query.addBindValue(param)
+                
             success = query.exec()
         else:
             success = query.exec(query_string)

@@ -3,8 +3,8 @@ from typing import List, Dict, Any, TYPE_CHECKING
 from src.services.base_service import BaseService
 from src.entities import User, Device
 from src.repositories.user_repo import UserRepository
-# from src.drivers.adb.controller import ADBController
 from src.utils.logger import logger
+
 if TYPE_CHECKING:
     from src.drivers.redis._manager_redis import RedisStateFacade
 
@@ -16,14 +16,10 @@ class UserService(BaseService[User]):
         self.repo: UserRepository
 
     def validate_create(self, entity: User) -> None:
-        """
-        Validates user data before creation.
-        
-        :raises ValueError: If the user name is empty.
-        """
+        """Validates user data before creation."""
         if not entity.user_name or entity.user_name.strip() == "":
             raise ValueError("User name cannot be empty.")
-
+    
     def get_profiles_by_device(self, device_uuid: str) -> List[User]:
         """Retrieves all user profiles assigned to a specific device."""
         return self.repo.get_by_device(device_uuid)
@@ -62,3 +58,11 @@ class UserService(BaseService[User]):
                 adb_user.device_uuid = device.uuid
                 self.create(adb_user)
                 self.assign_to_device(adb_user.uuid, device.uuid)
+                
+        adb_user_dict = {str(u.user_id): u for u in users_data}
+        existing_user_ids = set()
+        for db_user in existing_users:
+            existing_user_ids.add(db_user.user_id)
+            if str(db_user.user_id) not in adb_user_dict:
+                self.delete(db_user.uuid)
+                self.unassign_device(db_user.uuid)

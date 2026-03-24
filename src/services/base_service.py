@@ -1,6 +1,6 @@
 # src/services/base_service.py
 from PySide6.QtCore import QObject
-from typing import TypeVar, Generic, List, Optional, Any, TYPE_CHECKING
+from typing import TypeVar, Generic, Union, List, Optional, Any, TYPE_CHECKING
 
 from src.entities import BaseEntity
 from src.repositories.base_repo import BaseRepository
@@ -52,11 +52,13 @@ class BaseService(Generic[T]):
     def get_by_id(self, pk: Any) -> Optional[T]:
         return self.repo.get_by_id(pk)
 
-    def create(self, entity: T) -> bool:
+    def create(self, entity: T) -> Optional[T]:
         self.validate_create(entity)
 
         with self.db.atomic():
-            return self.repo.insert(entity)
+            if self.repo.insert(entity):
+                return entity
+            return None
 
     def update(self, entity: T) -> bool:
         self.validate_update(entity)

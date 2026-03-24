@@ -1,6 +1,12 @@
 # settings.yaml
-database:
-  database_path: "./repositories/app_database.db"
+repositories:
+  database_path: "./repositories/database/app_database.db"
+  external_db_path: "./repositories/database/external_db.db"
+  external_img_dir: "./repositories/images"
+  screen_shot_dir: "./repositories/screenshots"
+
+  tiktok_path: "./repositories/apks/facebook.apk"
+  facebook_path: "./repositories/apks/tiktok.apk"
 
 apk_dir: "./apks"
 

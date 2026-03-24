@@ -38,34 +38,63 @@ class Ui_action(object):
 
         self.action__actions_option = QComboBox(action)
         self.action__actions_option.addItem("")
-        self.action__actions_option.addItem("")
         self.action__actions_option.setObjectName(u"action__actions_option")
 
         self.action__layout.addWidget(self.action__actions_option, 0, 0, 1, 1)
 
         self.action__content = QStackedWidget(action)
         self.action__content.setObjectName(u"action__content")
-        self.action__content_listbymarketplace = QWidget()
-        self.action__content_listbymarketplace.setObjectName(u"action__content_listbymarketplace")
-        self.verticalLayout_3 = QVBoxLayout(self.action__content_listbymarketplace)
+        self.action__content_list_marketplace_container = QWidget()
+        self.action__content_list_marketplace_container.setObjectName(u"action__content_list_marketplace_container")
+        self.verticalLayout_3 = QVBoxLayout(self.action__content_list_marketplace_container)
         self.verticalLayout_3.setObjectName(u"verticalLayout_3")
-        self.action__content_listbymarketplace_layout = QVBoxLayout()
-        self.action__content_listbymarketplace_layout.setSpacing(0)
-        self.action__content_listbymarketplace_layout.setObjectName(u"action__content_listbymarketplace_layout")
+        self.action__content_list_marketplace_layout = QVBoxLayout()
+        self.action__content_list_marketplace_layout.setSpacing(0)
+        self.action__content_list_marketplace_layout.setObjectName(u"action__content_list_marketplace_layout")
 
-        self.verticalLayout_3.addLayout(self.action__content_listbymarketplace_layout)
+        self.verticalLayout_3.addLayout(self.action__content_list_marketplace_layout)
 
-        self.action__content.addWidget(self.action__content_listbymarketplace)
-        self.action__content_newfeed = QWidget()
-        self.action__content_newfeed.setObjectName(u"action__content_newfeed")
-        self.verticalLayout_2 = QVBoxLayout(self.action__content_newfeed)
+        self.action__content.addWidget(self.action__content_list_marketplace_container)
+        self.action__content_scroll_feed_container = QWidget()
+        self.action__content_scroll_feed_container.setObjectName(u"action__content_scroll_feed_container")
+        self.verticalLayout_2 = QVBoxLayout(self.action__content_scroll_feed_container)
         self.verticalLayout_2.setObjectName(u"verticalLayout_2")
-        self.action__content_newfeed_layout = QVBoxLayout()
-        self.action__content_newfeed_layout.setObjectName(u"action__content_newfeed_layout")
+        self.action__content_scroll_feed_layout = QVBoxLayout()
+        self.action__content_scroll_feed_layout.setObjectName(u"action__content_scroll_feed_layout")
 
-        self.verticalLayout_2.addLayout(self.action__content_newfeed_layout)
+        self.verticalLayout_2.addLayout(self.action__content_scroll_feed_layout)
 
-        self.action__content.addWidget(self.action__content_newfeed)
+        self.action__content.addWidget(self.action__content_scroll_feed_container)
+        self.action__content_interact_feed_container = QWidget()
+        self.action__content_interact_feed_container.setObjectName(u"action__content_interact_feed_container")
+        self.verticalLayout = QVBoxLayout(self.action__content_interact_feed_container)
+        self.verticalLayout.setObjectName(u"verticalLayout")
+        self.action__content_interact_feed_layout = QVBoxLayout()
+        self.action__content_interact_feed_layout.setObjectName(u"action__content_interact_feed_layout")
+
+        self.verticalLayout.addLayout(self.action__content_interact_feed_layout)
+
+        self.action__content.addWidget(self.action__content_interact_feed_container)
+        self.action__content_interact_target_container = QWidget()
+        self.action__content_interact_target_container.setObjectName(u"action__content_interact_target_container")
+        self.verticalLayout_5 = QVBoxLayout(self.action__content_interact_target_container)
+        self.verticalLayout_5.setObjectName(u"verticalLayout_5")
+        self.action__content_interact_target_layout = QVBoxLayout()
+        self.action__content_interact_target_layout.setObjectName(u"action__content_interact_target_layout")
+
+        self.verticalLayout_5.addLayout(self.action__content_interact_target_layout)
+
+        self.action__content.addWidget(self.action__content_interact_target_container)
+        self.action__content_post_group_container = QWidget()
+        self.action__content_post_group_container.setObjectName(u"action__content_post_group_container")
+        self.verticalLayout_6 = QVBoxLayout(self.action__content_post_group_container)
+        self.verticalLayout_6.setObjectName(u"verticalLayout_6")
+        self.action__content_post_group_layout = QVBoxLayout()
+        self.action__content_post_group_layout.setObjectName(u"action__content_post_group_layout")
+
+        self.verticalLayout_6.addLayout(self.action__content_post_group_layout)
+
+        self.action__content.addWidget(self.action__content_post_group_container)
 
         self.action__layout.addWidget(self.action__content, 1, 0, 1, 1)
 
@@ -75,7 +104,7 @@ class Ui_action(object):
 
         self.retranslateUi(action)
 
-        self.action__content.setCurrentIndex(1)
+        self.action__content.setCurrentIndex(4)
 
 
         QMetaObject.connectSlotsByName(action)
@@ -84,8 +113,7 @@ class Ui_action(object):
     def retranslateUi(self, action):
         action.setTitle(QCoreApplication.translate("action", u"Action", None))
         self.action__delete_btn.setText(QCoreApplication.translate("action", u"Delete", None))
-        self.action__actions_option.setItemText(0, QCoreApplication.translate("action", u"List in marketplace", None))
-        self.action__actions_option.setItemText(1, QCoreApplication.translate("action", u"New feed", None))
+        self.action__actions_option.setItemText(0, QCoreApplication.translate("action", u"--- Select Action ---", None))
 
     # retranslateUi
 

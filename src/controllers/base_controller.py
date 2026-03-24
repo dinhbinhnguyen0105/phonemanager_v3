@@ -1,6 +1,6 @@
 # src/controllers/base_controller.py
 from PySide6.QtCore import QObject, Signal
-from typing import TypeVar, Generic, List, Optional, Any
+from typing import TypeVar, Generic, List, Optional, Any, Union
 
 from src.services.base_service import BaseService
 from src.entities import BaseEntity
@@ -12,6 +12,7 @@ T = TypeVar("T", bound=BaseEntity)
 class BaseController(QObject, Generic[T]):
     data_changed = Signal()
     error_occurred = Signal(str)
+    msg_signal = Signal(str)
 
     def __init__(self, service: BaseService[T]):
         super().__init__()
@@ -23,13 +24,13 @@ class BaseController(QObject, Generic[T]):
     def get_by_id(self, pk: Any) -> Optional[T]:
         return self.service.get_by_id(pk)
 
-    def create(self, entity: T) -> bool:
+    def create(self, entity: T) -> Optional[T]:
         try:
             return self.service.create(entity)
         except Exception as e:
             logger.error(f"Error creating entity: {e}")
             self.error_occurred.emit(str(e))
-            return False
+            return None
 
     def update(self, entity: T) -> bool:
         try:
