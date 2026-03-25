@@ -87,7 +87,6 @@ class ADBController:
         except (ADBCommandError, ValueError):
             return 0
     
-
     def switch_user(self, user_id: int) -> bool:
         """
         Switches the User, stops all other background users (except root 0), 
@@ -130,8 +129,36 @@ class ADBController:
             return True
         except ADBCommandError:
             return False
-    
-    
+
+    def set_max_user(self, max_users: int = 10) -> bool:
+        """
+        Configures the maximum number of user profiles allowed on the device.
+
+        This method modifies the system property 'fw.max_users'. It requires 
+        Root privileges to execute the 'setprop' command. This is essential 
+        for environments managing multiple Android user profiles for automation.
+
+        Args:
+            max_users (int): The maximum limit of user profiles to allow. 
+                             Defaults to 10.
+
+        Returns:
+            bool: True if the property was set successfully, False if the 
+                  command failed or permissions were denied.
+        """
+        try:
+            script = f"setprop fw.max_users {max_users}"
+            out = self._shell(f"su -c '{script}'")
+            
+            if any(err in out.lower() for err in ["error", "denied", "not found"]):
+                from src.utils.logger import logger
+                logger.error(f"[{self.device_id}] Failed to set max users: {out}")
+                return False
+                
+            return True
+        except ADBCommandError:
+            return False
+
     def install_app_for_users(self, app_name: str, user_ids: List[int]) -> bool:
         apk_name = ""
         apk_path =""
