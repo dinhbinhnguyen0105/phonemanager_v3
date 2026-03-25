@@ -60,7 +60,7 @@ class HomePage(QWidget):
         self.user_table.social_data_changed.connect(self.social_table.refresh_data)
 
         self.controllers.device_controller.device_state_changed.connect(self.on_device_state_changed)
-        self.controllers.device_controller.device_state_changed.connect(self.device_table.on_device_state_changed)
+        self.controllers.device_controller.device_state_changed.connect(self.device_table.refresh_data)
         
         self.controllers.device_controller.redsocks_enable_success.connect(self._on_redsocks_enable_success)
         self.controllers.device_controller.redsocks_enable_failed.connect(self._on_redsocks_enable_failed)
@@ -71,6 +71,8 @@ class HomePage(QWidget):
         
         self.controllers.user_controller.user_sync_completed.connect(self.on_user_sync_completed)
         self.controllers.user_controller.user_sync_failed.connect(self.on_user_sync_failed)
+
+        self.adb_input.returnPressed.connect(self._on_adb_input_return_pressed)
 
     def log_message(self, msg: str):
         self.message.emit(msg)
@@ -164,6 +166,49 @@ class HomePage(QWidget):
 
     def _on_redsocks_disable_success(self, device: Device):
         self.log_message(f"Device {device.device_id} - {device.device_name}: Redsocks disabled successfully!")
+
+    def _on_adb_input_return_pressed(self):
+        """
+        Executes a raw ADB shell command when the Enter key is pressed.
+
+        This method sanitizes the input by stripping common ADB command prefixes 
+        (like 'adb shell' or 'adb -s <id> shell') to ensure compatibility with 
+        the internal ADB controller. It then executes the command on the 
+        currently selected device and routes the output to the UI log.
+        """
+        if not self.device_selected:
+            self.log_message("⚠️ No device selected to run the command.")
+            return
+
+        full_cmd = self.adb_input.text().strip()
+        if not full_cmd:
+            return
+            
+        prefix = f"adb -s {self.device_selected.device_id} shell "
+        if full_cmd.startswith(prefix):
+            cmd = full_cmd[len(prefix):].strip()
+        elif " shell " in full_cmd:
+            cmd = full_cmd.split(" shell ", 1)[1].strip()
+        else:
+            cmd = full_cmd
+            
+        if not cmd:
+            return
+
+        self.log_message(f"▶️ Executing command: {cmd}")
+        try:
+            from src.drivers.adb.adb_controller import ADBController
+            adb = ADBController(self.device_selected.device_id)
+            
+            result = adb._shell(cmd)
+            
+            if result.strip():
+                self.log_message(f"✔️ Result: {result.strip()}")
+            else:
+                self.log_message("✔️ Command executed successfully (No Output).")
+                
+        except Exception as e:
+            self.log_message(f"❌ Execution error: {str(e)}")
     
     def refresh_data(self):
         self.device_table.refresh_data()

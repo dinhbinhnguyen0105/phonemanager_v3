@@ -69,6 +69,11 @@ class DeviceTable(QTableView):
         menu.addAction("Disable Internet", lambda : self._on_disable_internet_connection(devices))
         menu.addSeparator()
 
+        menu.addAction("⚙️ Set Max Users (10)", lambda: self._set_max_users(devices))
+        menu.addSeparator()
+
+        enable_redsocks_act = menu.addAction("Enable Redsocks (Virtual Proxy)")
+
         enable_redsocks_act = menu.addAction("Enable Redsocks (Virtual Proxy)")
         enable_redsocks_act.triggered.connect(lambda: self._enable_redsocks(devices))
 
@@ -193,6 +198,30 @@ class DeviceTable(QTableView):
         selected_device = self._parse_device_from_record(record)
         self.row_double_clicked.emit(selected_device)
 
+    def _set_max_users(self, devices: List[Device]):
+        """
+        Triggers the ADBController to configure Multi-User limits for the selected devices.
+
+        This method iterates through a list of device objects, checks for root 
+        privileges, and attempts to set the 'fw.max_users' system property to 10. 
+        It provides real-time feedback via log signals regarding the success or 
+        failure of the operation for each device.
+
+        Args:
+            devices (List[Device]): A list of Device entities to be configured.
+        """
+        for device in devices:
+            if not device.device_root:
+                self.log_msg.emit(f"⚠️ Device {device.device_id} is not rooted; the command may be rejected.")
+                
+            adb_controller = ADBController(device.device_id)
+            result = adb_controller.set_max_user(max_users=10)
+            
+            if result:
+                self.log_msg.emit(f"⚙️ Successfully set fw.max_users = 10 for {device.device_id}")
+            else:
+                self.log_msg.emit(f"❌ Failed to configure Max Users for {device.device_id}. Check terminal logs.")
+        
     def on_device_state_changed(self, device: Device):
         self._model.select()
     
