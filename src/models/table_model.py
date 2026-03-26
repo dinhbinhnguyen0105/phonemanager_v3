@@ -27,6 +27,28 @@ class BaseTableModel(QSqlTableModel):
                 self.setHeaderData(
                     i, Qt.Orientation.Horizontal, self.column_headers[col_name]
                 )
+                
+    def flags(self, index: QModelIndex) -> Qt.ItemFlag:
+        if not index.isValid():
+            return Qt.ItemFlag.NoItemFlags
+            
+        flags = super().flags(index)
+        col_name = self.record().fieldName(index.column())
+        
+        editable_columns = [
+            "device_name", 
+            "user_name", 
+            "social_name", 
+            "social_group", 
+            "social_password"
+        ]
+        
+        if col_name in editable_columns:
+            flags |= Qt.ItemFlag.ItemIsEditable
+        else:
+            flags &= ~Qt.ItemFlag.ItemIsEditable
+            
+        return flags
 
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any: # type: ignore
         if not index.isValid():
@@ -71,7 +93,7 @@ class DeviceTableModel(BaseTableModel):
             "device_root": "Rooted",
         }
         super().__init__(db_manager, "devices", headers)
-        self.setFilter(f"device_status = '{DeviceStatus.ONLINE.value}'")
+        self.setFilter(f"device_status != '{DeviceStatus.OFFLINE.value}'")
 
     def data(self, index: QModelIndex, role: int = Qt.ItemDataRole.DisplayRole) -> Any:
         if not index.isValid():

@@ -19,7 +19,10 @@ class SocialTable(QTableView):
         self.setModel(self._model)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        self.setEditTriggers(QAbstractItemView.EditTrigger.NoEditTriggers)
+        self.setEditTriggers(
+            QAbstractItemView.EditTrigger.DoubleClicked | 
+            QAbstractItemView.EditTrigger.EditKeyPressed
+        )
 
         self._hide_columns(["uuid", "created_at", "updated_at", "social_password"])
         self.doubleClicked.connect(self._on_row_double_clicked)

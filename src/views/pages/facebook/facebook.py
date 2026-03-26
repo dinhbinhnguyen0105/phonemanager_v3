@@ -45,6 +45,7 @@ class FacebookPageLogic(QObject):
         """
         self.message.emit(f"🚀 Scheduling launch for {len(socials)} Facebook accounts...")
         logger.info(f"Scheduling launch for {len(socials)} Facebook accounts...")
+        self.redis_facade.jobs.clear_all_job_data()
         queued_count = 0
 
         for social in socials:
