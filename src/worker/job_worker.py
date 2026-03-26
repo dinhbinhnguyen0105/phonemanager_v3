@@ -58,18 +58,18 @@ class JobExecutionWorker(QThread):
                 
             device = self.controllers.device_controller.get_by_id(job.device_uuid)
             if not device or device.device_status != DeviceStatus.ONLINE:
-                logger.debug(f"Device {job.device_uuid} is offline/busy in database.")
+                # logger.debug(f"Device {job.device_uuid} is offline/busy in database.")
                 self.redis_facade.jobs.requeue_job(job_data)
-                time.sleep(1) 
+                time.sleep(1)
                 continue
 
             lock_key = f"farm:device:lock:{device.device_id}"
             is_locked = self.redis_facade.devices.redis.set(lock_key, "LOCKED", nx=True, ex=3600)
             
             if not is_locked:
-                logger.debug(f"Device {device.device_id} is locked by another worker. Retry in 180s...")
+                # logger.debug(f"Device {device.device_id} is locked by another worker. Retry in 180s...")
                 self.redis_facade.jobs.requeue_job(job_data)
-                time.sleep(180) 
+                time.sleep(1)
                 continue
 
             is_setup_success = False
@@ -88,12 +88,18 @@ class JobExecutionWorker(QThread):
                     self.redis_facade.jobs.set_job_result(job.uuid, False, err_msg)
                     continue 
                 
-                is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)
-                
+                is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)                
                 if not is_setup_success:
-                    self.message.emit(f"❌ Setup error for Job '{job.name}': {msg}")
-                    self.redis_facade.jobs.set_job_result(job.uuid, False, f"Setup Failed: {msg}")
-                    continue 
+                    logger.debug(is_setup_success)
+                    if "No available proxies" in msg:
+                        # self.message.emit(f"⏳ Kho Proxy đang bận. Tạm đưa Job '{job.name}' về hàng chờ...")
+                        self.redis_facade.jobs.requeue_job(job_data)
+                        time.sleep(2)
+                    else:
+                        self.message.emit(f"❌ Setup error for Job '{job.name}': {msg}")
+                        self.redis_facade.jobs.set_job_result(job.uuid, False, f"Setup Failed: {msg}")
+                        
+                    continue
                     
                 self.message.emit(f"▶️ Starting '{job.name}' on {device.device_name}...")
                 

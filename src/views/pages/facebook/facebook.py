@@ -482,7 +482,6 @@ class FacebookPage(QWidget, Ui_page__facebooks):
         if not self.pending_jobs:
             self.message.emit("⚠️ No jobs available to push. Please Save configuration first.")
             return
-            
         self.logic.push_jobs_to_redis(self.pending_jobs)
         msg = f"✔️ Add to {len(self.pending_jobs)} pending jobs to redis"
         logger.success(msg)
