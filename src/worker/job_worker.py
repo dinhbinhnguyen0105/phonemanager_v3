@@ -90,7 +90,6 @@ class JobExecutionWorker(QThread):
                 
                 is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)                
                 if not is_setup_success:
-                    logger.debug(is_setup_success)
                     if "No available proxies" in msg:
                         # self.message.emit(f"⏳ Kho Proxy đang bận. Tạm đưa Job '{job.name}' về hàng chờ...")
                         self.redis_facade.jobs.requeue_job(job_data)
