@@ -5,9 +5,12 @@ import time
 import posixpath
 from random import uniform
 import uiautomator2 as u2
+from uuid import uuid4
 from typing import Optional, List
-from src.utils.logger import logger
+from src.utils.yaml_handler import settings
 import xml.etree.ElementTree as ET
+from datetime import datetime
+from PIL import Image
 
 class BaseAutomator:
     """
@@ -620,3 +623,55 @@ class BaseAutomator:
         self.log(f"⚠️ Swiped {max_swipes} times; may not have reached the absolute top.")
         return False
     
+    def take_screenshot(self, quality: int = 50) -> Optional[str]:
+        """
+        Captures a device screenshot, compresses it, and saves it as a JPEG file.
+
+        This method handles the full screenshot lifecycle: directory validation, 
+        safe filename generation using timestamps and device IDs, color space 
+        conversion (RGBA to RGB for JPEG compatibility), and file size optimization.
+        It includes safety checks to ensure the resulting file is valid and 
+        non-zero in size.
+
+        Args:
+            last_name (str): Optional suffix to identify the execution step.
+            quality (int): JPEG compression quality (1-100). Default is 50.
+
+        Returns:
+            Optional[str]: The absolute local path to the saved image, 
+                           or None if the capture fails.
+        """        
+        try:
+            output_dir = settings.repositories.screen_shot_dir # type: ignore
+            if not os.path.exists(output_dir):
+                os.makedirs(output_dir)
+
+            last_name = str(uuid4())
+
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            safe_device_id = self.device_id.replace(":", "_").replace(".", "_")
+            
+            file_name = f"{safe_device_id}_{timestamp}_{last_name}.jpg"
+            local_path = os.path.join(output_dir, file_name)
+
+            image = self.d.screenshot()
+            
+            if image is None:
+                self.log(f"⚠️ Screenshot command returned empty for step: '{last_name}'.")
+                return None
+
+            image = image.convert('RGB')
+            image.save(local_path, format='JPEG', optimize=True, quality=quality)
+            
+            if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
+                self.log(f"⚠️ Failed to save valid screenshot for step: '{last_name}'.")
+                if os.path.exists(local_path): 
+                    os.remove(local_path)
+                return None
+
+            self.log(f"📸 Screenshot saved ({os.path.getsize(local_path) // 1024} KB) - '{last_name}'")
+            return local_path
+            
+        except Exception as e:
+            self.log(f"❌ System error during screenshot: {e}")
+            return None

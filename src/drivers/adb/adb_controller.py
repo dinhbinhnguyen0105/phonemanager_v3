@@ -183,9 +183,43 @@ class ADBController:
         return package_name in output
     
     def install_new_apk(self, user_id: int, apk_path: str) -> bool: 
-        output = self._shell(f"pm install -r --user {user_id} {apk_path}")
-        return "success" in output.lower()
+        """
+        Pushes an APK file from the host PC to the mobile device and installs it 
+        for a specific Android user profile.
 
+        The process involves three stages: 
+        1. Synchronizing the local file to the device's temporary directory.
+        2. Executing the Package Manager (pm) install command with the --user flag.
+        3. Cleaning up the temporary APK file from the device to save storage.
+
+        Args:
+            user_id (int): The target Android user profile ID (e.g., 0 for Owner, 10+ for others).
+            apk_path (str): The absolute local path to the APK file on the PC.
+
+        Returns:
+            bool: True if the installation was successful, False otherwise.
+        """
+        import os
+        from src.utils.logger import logger
+        
+        if not os.path.exists(apk_path):
+            logger.error(f"[{self.device_id}] APK file not found on PC: {apk_path}")
+            return False
+            
+        try:
+            remote_tmp = "/data/local/tmp/temp_install.apk"
+            self.device.sync.push(apk_path, remote_tmp)
+            
+            output = self._shell(f"pm install -r --user {user_id} {remote_tmp}")
+            
+            self._shell(f"rm {remote_tmp}")
+            
+            return "success" in output.lower()
+            
+        except Exception as e:
+            logger.error(f"[{self.device_id}] Error pushing or installing APK: {e}")
+            return False
+    
     def install_existed_apk(self, user_id: int, package_name: str) -> bool: 
         output = self._shell(f"pm install-existing --user {user_id} {package_name}")
         return "installed" in output.lower()
@@ -256,6 +290,21 @@ class ADBController:
             return True
         except ADBCommandError:
             return False
+
+    def disable_wifi(self) -> bool:
+        try:
+            self._shell("svc wifi disable")
+            return True
+        except ADBCommandError:
+            return False
+
+    def enanble_wifi(self) -> bool:
+        try:
+            self._shell("svc wifi enable")
+            return True
+        except ADBCommandError:
+            return False
+
 
     def take_screenshot(self, output_dir: str) -> Optional[str]:
         """

@@ -27,29 +27,22 @@ def setup_device_environment(
     try:
 
         adb = ADBController(device.device_id)
+        adb.enable_internet()
+        adb.enanble_wifi()
         switch_success = adb.switch_user(user.user_id)
         if not switch_success:
             teardown_device_environment(controllers, device, proxy)
             return False, None, f"Could not switch to user {user.user_id}."
-        
-        adb.enable_internet()
+                        
         adb.grand_apk_permission(user_id=user.user_id, package_name="com.facebook.katana")
-        # tt
-
-
-        # 1. RETRIEVE PROXY FROM REDIS POOL
-        # Update: Utilizing acquire_proxy to comply with the distributed architecture
         proxy = controllers.proxy_controller.acquire_proxy(device.device_id, proxy_type)
+
         if not proxy:
             return False, None, "No available proxies in the Pool."
-        
-        # logger.debug(proxy)
-            
-        # 2. ROTATE PROXY (If Proxy type is API or LOCAL)
+
         if proxy.proxy_type in [ProxyType.API, ProxyType.LOCAL]:
             is_success, msg = controllers.proxy_controller._rotate_proxy(proxy.uuid)
             if not is_success:
-                # If rotation fails, immediately release the proxy back to the Pool
                 controllers.proxy_controller.release_proxy(proxy.uuid)
                 return False, None, f"Proxy rotation error: {msg}"
             

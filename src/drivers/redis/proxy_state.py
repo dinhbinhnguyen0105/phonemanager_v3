@@ -62,12 +62,24 @@ class ProxyState(BaseState):
     
     def add_to_pool(self, proxy_uuid: str, p_type: str = ProxyType.STATIC.value) -> None:
         """
-        Pushes a proxy into the queue (Pool) according to its classification.
-        
-        :param proxy_uuid: Unique identifier for the proxy.
-        :param p_type: Proxy type (e.g., STATIC, API, LOCAL).
+        Adds a proxy to the available resource pool based on its classification.
+
+        This method ensures the proxy is unique within the Redis list by performing 
+        an 'LREM' (remove all existing occurrences) before pushing it to the 
+        head of the queue. It also synchronizes the proxy's metadata status 
+        to 'AVAILABLE'.
+
+        Args:
+            proxy_uuid (str): The unique identifier of the proxy.
+            p_type (str): The type of proxy (e.g., STATIC, API, LOCAL). 
+                          Defaults to ProxyType.STATIC.
         """
-        self.redis.lpush(self._key(f"pool:available:{p_type}"), proxy_uuid)
+        queue_key = self._key(f"pool:available:{p_type}")
+        
+        self.redis.lrem(queue_key, 0, proxy_uuid) 
+        
+        self.redis.lpush(queue_key, proxy_uuid)
+        
         self.hset_dict(f"info:{proxy_uuid}", {
             "status": ProxyStatus.AVAILABLE.value,
         })

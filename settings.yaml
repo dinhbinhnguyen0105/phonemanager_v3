@@ -6,6 +6,7 @@ repositories:
   external_db_path: "C:/Users/dinhb/Desktop/repositories/db/database.db"
   external_img_dir: "C:/Users/dinhb/Desktop/repositories/images_products"
   screen_shot_dir: "./repositories/screenshots"
+  gnirehtet_proc: "C:/Users/dinhb/Desktop/Dev/python/phonemanager_v3/repositories/gnirehtet/gnirehtet.exe"
 
   tiktok_path: "./repositories/apks/facebook.apk"
   facebook_path: "./repositories/apks/tiktok.apk"

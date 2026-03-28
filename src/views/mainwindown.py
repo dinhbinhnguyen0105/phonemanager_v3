@@ -2,8 +2,9 @@
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QMainWindow, QWidget, QHBoxLayout, QStackedWidget, QPushButton, QMessageBox, QLabel, QListView, QListWidgetItem, QListWidget
 
-from src.controllers._manager_controllers import ControllerManager
 from src.worker.job_worker import JobExecutionWorker
+from src.controllers._manager_controllers import ControllerManager
+
 from src.views.sidebar.sidebar import Sidebar
 from src.views.pages.home.home import HomePage
 from src.views.pages.settings.settings import SettingsPage

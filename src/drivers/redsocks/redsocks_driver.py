@@ -12,6 +12,7 @@ if project_root not in sys.path:
 from src.utils.logger import logger
 from src.drivers.adb.adb_controller import ADBController
 from src.drivers.redsocks.base64config import BIN_V7, BIN_V8
+from src.utils.logger import logger
 
 class RedsocksDriver:
     """
@@ -49,13 +50,22 @@ class RedsocksDriver:
                 os.remove(local_temp)
 
     def _setup_iptables(self, proxy_ip: str):
-        """Configures firewall rules to transparently redirect TCP traffic."""
+        """Configures firewall rules safely using a custom chain."""
         cmds = [
-            "iptables -t nat -F OUTPUT",
-            "iptables -t nat -A OUTPUT -d 127.0.0.0/8 -j RETURN",
-            f"iptables -t nat -A OUTPUT -d {proxy_ip} -j RETURN",
-            "iptables -t nat -A OUTPUT -p udp --dport 53 -j RETURN",  # Allow DNS bypass
-            "iptables -t nat -A OUTPUT -p tcp -j REDIRECT --to-ports 12345",
+            "iptables -t nat -N REDSOCKS 2>/dev/null",
+            "iptables -t nat -F REDSOCKS",
+            "iptables -t nat -A REDSOCKS -d 127.0.0.0/8 -j RETURN",
+            f"iptables -t nat -A REDSOCKS -d {proxy_ip} -j RETURN",
+            
+            "iptables -t nat -A REDSOCKS -p udp --dport 53 -j RETURN",  
+            "iptables -t nat -A REDSOCKS -p tcp --dport 53 -j RETURN",
+
+            "iptables -t nat -A REDSOCKS -p tcp --dport 853 -j RETURN", 
+            
+            "iptables -t nat -A REDSOCKS -p tcp -j REDIRECT --to-ports 12345",
+        
+            "iptables -t nat -D OUTPUT -j REDSOCKS 2>/dev/null",
+            "iptables -t nat -I OUTPUT 1 -j REDSOCKS"
         ]
         for c in cmds:
             self.adb._shell(f"su -c '{c}'")
@@ -133,10 +143,16 @@ class RedsocksDriver:
             return ""
 
     def disable(self):
-        """Flushes IPTables and terminates the proxy process."""
+        """Cleanly removes proxy rules without destroying Android's NAT table."""
         try:
-            self.adb._shell("su -c 'iptables -t nat -F'")
-            self.adb._shell("su -c 'killall -9 redsocks2'")
+            cmds = [
+                "iptables -t nat -D OUTPUT -j REDSOCKS 2>/dev/null",
+                "iptables -t nat -F REDSOCKS 2>/dev/null",
+                "iptables -t nat -X REDSOCKS 2>/dev/null",
+                "killall -9 redsocks2 2>/dev/null"
+            ]
+            for c in cmds:
+                self.adb._shell(f"su -c '{c}'")
         except Exception:
             pass
 
@@ -161,7 +177,7 @@ class RedsocksDriver:
         self.adb._shell("su -c 'echo 1 > /proc/sys/net/ipv6/conf/all/disable_ipv6'")
         self.adb._shell("su -c 'echo 1 > /proc/sys/net/ipv6/conf/default/disable_ipv6'")
 
-        self.set_proxy(ip, port, username, password, ptype)
+        self.set_proxy(ip, port, username, password)
 
         success = False
         for _ in range(10):
