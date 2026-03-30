@@ -4,10 +4,7 @@
 .database
 .results.json
 logs
-repositories/images
-repositories/screenshots
-repositories/apks
-repositories/gnirehtet
+repositories
 settings.yaml
 dist
 build
