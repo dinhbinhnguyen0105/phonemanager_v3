@@ -25,6 +25,7 @@ class UserTable(QTableView):
         self.controllers = controllers
         self.current_device: Optional[Device] = None # Stores the device currently being operated
         self.controllers.user_controller.user_switched.connect(self._on_user_switched)
+        self.controllers.user_controller.app_installed.connect(self._on_installed_app)
         self._model = UserTableModel(DatabaseManager())
         self.setModel(self._model)
         self.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
@@ -86,7 +87,6 @@ class UserTable(QTableView):
         if not self.current_device:
             return
         self.controllers.user_controller.install_app(self.current_device, users, app_name)
-        self.controllers.user_controller.app_installed.connect(self._on_installed_app)
 
     def _switch_user(self, user: User):
         self.log_msg.emit(f"🔄 Switching to user: {user.user_name} (ID: {user.user_id})")

@@ -25,36 +25,51 @@ def setup_device_environment(
     
     proxy = None
     try:
-
         adb = ADBController(device.device_id)
         adb.enable_internet()
         adb.enanble_wifi()
+        
         switch_success = adb.switch_user(user.user_id)
         if not switch_success:
             teardown_device_environment(controllers, device, proxy)
             return False, None, f"Could not switch to user {user.user_id}."
                         
         adb.grand_apk_permission(user_id=user.user_id, package_name="com.facebook.katana")
+        
         proxy = controllers.proxy_controller.acquire_proxy(device.device_id, proxy_type)
-
         if not proxy:
+            teardown_device_environment(controllers, device, proxy)
             return False, None, "No available proxies in the Pool."
 
+        # ROTATE PROXY
         if proxy.proxy_type in [ProxyType.API, ProxyType.LOCAL]:
             is_success, msg = controllers.proxy_controller._rotate_proxy(proxy.uuid)
+            
             if not is_success:
-                controllers.proxy_controller.release_proxy(proxy.uuid)
+                proxy_cooldown = 0
+                if "COOLDOWN:" in msg:
+                    try:
+                        proxy_cooldown = int(msg.split(":")[1])
+                        msg = f"API Rate limit hit, cooling down for {proxy_cooldown}s"
+                    except (IndexError, ValueError):
+                        pass
+                
+                # 1. Giải phóng Proxy với độ trễ (nhốt proxy)
+                controllers.proxy_controller.release_proxy(proxy.uuid, delay_seconds=proxy_cooldown)
+                # 2. Dọn dẹp thiết bị nhưng truyền None để không nhả Proxy 2 lần
+                teardown_device_environment(controllers, device, None)
+                
                 return False, None, f"Proxy rotation error: {msg}"
             
-            # Refresh proxy data after rotation
-            proxy = controllers.proxy_controller.get_by_id(proxy.uuid) 
+            # Cập nhật thông tin Proxy mới sau khi xoay
+            proxy = controllers.proxy_controller.get_by_id(proxy.uuid)
 
         if not proxy:
+            teardown_device_environment(controllers, device, None)
             return False, None, "Proxy data synchronization failed after rotation."
 
-        # 3. APPLY PROXY TO DEVICE VIA REDSOCKS
+        # APPLY PROXY TO DEVICE VIA REDSOCKS
         rs_driver = RedsocksDriver(device.device_id)
-        # Run enable function synchronously (blocks until network is ready or an error occurs)
         rs_result = rs_driver.enable(
             ip=proxy.host,
             port=proxy.port,
@@ -63,12 +78,11 @@ def setup_device_environment(
             ptype=proxy.proxy_type.value
         )
         
-        if rs_result in ["START_FAILED", "NO_INTERNET"]: #"NO_ROOT", 
-            # If network connection fails, call teardown to clean up the environment
+        if rs_result in ["START_FAILED", "NO_INTERNET", "NO_ROOT"]: 
             teardown_device_environment(controllers, device, proxy)
             return False, None, f"Failed to apply proxy to device: {rs_result}"
 
-        # 4. UNLOCK SCREEN (Wake up -> Unlock -> Return to Home)
+        # UNLOCK SCREEN (Wake up -> Unlock -> Return to Home)
         adb._shell("input keyevent 224") # WAKEUP
         time.sleep(0.5)
         adb._shell("input keyevent 82")  # UNLOCK (Swipe/Menu)
@@ -99,6 +113,7 @@ def teardown_device_environment(
         adb = ADBController(device.device_id)
         adb.disable_internet()
         adb._shell("am kill-all")
+        
         if proxy:
             controllers.proxy_controller.release_proxy(proxy.uuid)
         return True

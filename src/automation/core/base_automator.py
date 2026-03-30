@@ -657,21 +657,21 @@ class BaseAutomator:
             image = self.d.screenshot()
             
             if image is None:
-                self.log(f"⚠️ Screenshot command returned empty for step: '{last_name}'.")
+                # self.log(f"⚠️ Screenshot command returned empty for step: '{last_name}'.")
                 return None
 
             image = image.convert('RGB')
             image.save(local_path, format='JPEG', optimize=True, quality=quality)
             
             if not os.path.exists(local_path) or os.path.getsize(local_path) == 0:
-                self.log(f"⚠️ Failed to save valid screenshot for step: '{last_name}'.")
+                # self.log(f"⚠️ Failed to save valid screenshot for step: '{last_name}'.")
                 if os.path.exists(local_path): 
                     os.remove(local_path)
                 return None
 
-            self.log(f"📸 Screenshot saved ({os.path.getsize(local_path) // 1024} KB) - '{last_name}'")
+            # self.log(f"📸 Screenshot saved ({os.path.getsize(local_path) // 1024} KB) - '{last_name}'")
             return local_path
             
         except Exception as e:
-            self.log(f"❌ System error during screenshot: {e}")
+            # self.log(f"❌ System error during screenshot: {e}")
             return None

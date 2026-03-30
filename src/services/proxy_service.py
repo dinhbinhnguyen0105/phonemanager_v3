@@ -101,14 +101,32 @@ class ProxyService(BaseService[Proxy]):
         logger.info(f"[{device_id}] Acquired Proxy: {proxy.host}:{proxy.port}")
         return proxy
 
-    def release_proxy(self, uuid: str) -> None:
-        """Returns the proxy to the Redis Pool so other devices can utilize it."""
+    def release_proxy(self, uuid: str, delay_seconds: int = 0) -> None:
+        """
+        Returns a proxy to the Redis resource pool for reuse by other devices.
+
+        This method handles both immediate and delayed proxy releases. If a 
+        cooldown period (delay_seconds) is specified, the proxy is held in 
+        a temporary state before becoming available. Otherwise, the proxy 
+        status is updated to 'AVAILABLE' in both the primary database and 
+        the Redis cache, making it immediately selectable for new tasks.
+
+        Args:
+            uuid (str): The unique identifier of the proxy to release.
+            delay_seconds (int): The duration in seconds to wait before 
+                                 returning the proxy to the available pool.
+        """
         proxy = self.get_by_id(uuid)
         if not proxy:
             return
-        if proxy.proxy_status == ProxyStatus.WORKING:
-            proxy.proxy_status = ProxyStatus.AVAILABLE
-            self.update(proxy)
             
-        self.redis_facade.proxies.release_proxy(uuid)
-        logger.info(f"Proxy '{uuid[:8]}...' has been returned to the Pool.")
+        if delay_seconds > 0:
+            logger.warning(f"⏳ Proxy '{uuid[:8]}' is cooling down. Waiting {delay_seconds}s before returning to Pool...")
+            self.redis_facade.proxies.release_proxy(uuid, delay_seconds)
+        else:
+            if proxy.proxy_status == ProxyStatus.WORKING:
+                proxy.proxy_status = ProxyStatus.AVAILABLE
+                super().update(proxy)
+                
+            self.redis_facade.proxies.release_proxy(uuid, 0)
+            logger.info(f"Proxy '{uuid[:8]}...' has been successfully returned to the Pool.")

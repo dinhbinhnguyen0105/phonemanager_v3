@@ -83,13 +83,13 @@ def _goto_home_for_sell(bot: BaseAutomator) -> bool:
         try:
             bot.log(f"🔄 Opening Marketplace (Attempt {attempt + 1}/3)...")
             bot.launch_app("com.facebook.katana", "fb://marketplace")
-            bot.take_screenshot()
+            # bot.take_screenshot()
             sell_btn = bot.get_button_by_text("sell", timeout=15)
             if not sell_btn.exists:
                 raise Exception("Could not find 'Sell' button")
             sell_btn.click_exists(timeout=5)
             bot.smart_sleep(1) 
-            bot.take_screenshot()
+            # bot.take_screenshot()
             bot.log("Checking for 'Create listing' button...")
             create_btn = bot.get_button_by_text("create", timeout=3)
             if create_btn.exists:
@@ -97,10 +97,10 @@ def _goto_home_for_sell(bot: BaseAutomator) -> bool:
                     raise Exception("App stuck, no response after clicking 'Create'")
             else:
                 bot.log("⏩ 'Create' button not found, skipping step.")
-            bot.take_screenshot()
+            # bot.take_screenshot()
             if bot.click_button_with_retry("sale or rent", max_retries=3, timeout=10, wait_gone_timeout=5):
                 bot.log("✔️ Navigated to listing form successfully!")
-                bot.take_screenshot()
+                # bot.take_screenshot()
                 return True
             else:
                 raise Exception("Could not click 'Sale or rent' or page did not transition")
@@ -121,7 +121,7 @@ def _fill_photos(bot: BaseAutomator, photo_num: int = 1):
         raise Exception("Could not click 'Add photos' button")
     
     bot.smart_sleep(2) 
-    bot.take_screenshot()
+    # bot.take_screenshot()
     grid_view = bot.get_elements_by_widget("android.widget.GridView")
     if not grid_view.exists:
         raise Exception("Could not locate the Photo Gallery GridView")
@@ -131,7 +131,7 @@ def _fill_photos(bot: BaseAutomator, photo_num: int = 1):
         text="photo", 
         timeout=30
     )
-    bot.take_screenshot()
+    # bot.take_screenshot()
     count = photo_widgets.count
     if count == 0:
         raise Exception("No items labeled 'photo' found in gallery")
@@ -141,7 +141,7 @@ def _fill_photos(bot: BaseAutomator, photo_num: int = 1):
     for i in reversed(range(actual_num)):
         photo_widgets[i].click_exists(timeout=10)
         bot.smart_sleep(1)
-        bot.take_screenshot()
+        # bot.take_screenshot()
 
     
     if not bot.click_button_with_retry("next", timeout=15):
@@ -151,14 +151,14 @@ def _fill_listing_details(bot: BaseAutomator, payload: Dict[str, Any]):
     """
     Orchestrates the input of listing details (Title, Price, Category, Location, Description).
     """
-    bot.take_screenshot()
+    # bot.take_screenshot()
     _set_title(bot, payload.get("title", ""))
-    bot.take_screenshot()
+    # bot.take_screenshot()
     _set_price(bot)
     _set_category(bot)
-    bot.take_screenshot()
+    # bot.take_screenshot()
     _set_location(bot, "Da Lat")
-    bot.take_screenshot()
+    # bot.take_screenshot()
     _set_description(bot, payload.get("description", ""))
 
 def _set_title(bot: BaseAutomator, title: str):
@@ -257,7 +257,7 @@ def _click_next_button(bot: BaseAutomator):
     next_button = bot.get_button_by_text("next", timeout=30)
     if not next_button.exists:
         raise Exception("Could not find 'Next' button")
-    bot.take_screenshot()
+    # bot.take_screenshot()
     next_button.click()
 
 def _list_more_place(bot: BaseAutomator):
@@ -270,7 +270,7 @@ def _list_more_place(bot: BaseAutomator):
     collected_groups = {} 
     max_swipes = 10
     
-    bot.take_screenshot()
+    # bot.take_screenshot()
     # PHASE 1: Data Collection & Scroll Down
     for _ in range(max_swipes):
         checkboxes = bot.get_elements_by_widget("android.widget.CheckBox", timeout=2)
@@ -285,7 +285,7 @@ def _list_more_place(bot: BaseAutomator):
                 pass 
         
         sig1 = bot._get_screen_signature()
-        bot.take_screenshot()
+        # bot.take_screenshot()
         bot.swipe_up(scale=1)
         sig2 = bot._get_screen_signature()
         
@@ -301,14 +301,14 @@ def _list_more_place(bot: BaseAutomator):
     clicked_groups = set() 
     
     for _ in range(max_swipes):
-        bot.take_screenshot()
+        # bot.take_screenshot()
         checkboxes = bot.get_elements_by_widget("android.widget.CheckBox", timeout=2)
         
         for box in checkboxes:
             try:
                 desc = box.info.get('contentDescription', '')
                 if desc in target_descs and desc not in clicked_groups:
-                    bot.take_screenshot()
+                    # bot.take_screenshot()
                     box.click_exists(timeout=2)
                     clicked_groups.add(desc)
             except:
@@ -347,13 +347,13 @@ def _click_publish_button(bot: BaseAutomator):
     bot.log("Locating and clicking the 'Publish' button...")
     
     publish_btn = bot.d(resourceId="mp_composer_post")
-    bot.take_screenshot()
+    # bot.take_screenshot()
     
     if publish_btn.exists(timeout=10):
-        bot.take_screenshot()
+        # bot.take_screenshot()
         publish_btn.click_exists(timeout=5)
         is_published = publish_btn.wait_gone(timeout=15)
-        bot.take_screenshot()
+        # bot.take_screenshot()
         
         if is_published:
             bot.log("✔️ 'Publish' button clicked successfully!")

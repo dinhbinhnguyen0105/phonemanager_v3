@@ -4,7 +4,7 @@ from typing import TYPE_CHECKING
 from PySide6.QtCore import Signal, QThread
 
 from src.entities import Job
-from src.constants import Platform, DeviceStatus, JobAction
+from src.constants import Platform, DeviceStatus, JobAction, ProxyType
 from src.automation.facebook.router import route_facebook_job
 from src.automation.tiktok.router import route_tiktok_job
 from src.worker.job_env import setup_device_environment, teardown_device_environment
@@ -14,16 +14,6 @@ if TYPE_CHECKING:
     from src.controllers._manager_controllers import ControllerManager
 
 class JobExecutionWorker(QThread):
-    """
-    Worker thread responsible for polling jobs from Redis and executing them on mobile devices.
-    
-    This worker handles the full lifecycle of a job:
-    1. Polling jobs from the Redis queue.
-    2. Synchronizing device access via distributed atomic locks.
-    3. Setting up the device environment (Proxy, Network, ADB).
-    4. Routing tasks to specific automation scripts (Facebook, TikTok).
-    5. Cleaning up resources and releasing locks upon completion or failure.
-    """
     message = Signal(str)
     request_scrcpy = Signal(object)
     request_update_device = Signal(object)
@@ -35,11 +25,6 @@ class JobExecutionWorker(QThread):
         self.is_running = True
     
     def run(self):
-        """
-        Main execution loop for the job worker.
-        
-        Continues polling for jobs until stopped or reaching an idle limit.
-        """
         idle_count = 0 
         
         while self.is_running:
@@ -58,7 +43,6 @@ class JobExecutionWorker(QThread):
                 
             device = self.controllers.device_controller.get_by_id(job.device_uuid)
             if not device or device.device_status != DeviceStatus.ONLINE:
-                # logger.debug(f"Device {job.device_uuid} is offline/busy in database.")
                 self.redis_facade.jobs.requeue_job(job_data)
                 time.sleep(1)
                 continue
@@ -67,7 +51,6 @@ class JobExecutionWorker(QThread):
             is_locked = self.redis_facade.devices.redis.set(lock_key, "LOCKED", nx=True, ex=3600)
             
             if not is_locked:
-                # logger.debug(f"Device {device.device_id} is locked by another worker. Retry in 180s...")
                 self.redis_facade.jobs.requeue_job(job_data)
                 time.sleep(1)
                 continue
@@ -90,15 +73,14 @@ class JobExecutionWorker(QThread):
                 
                 is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)                
                 if not is_setup_success:
-                    if "Proxy rotation error" in msg or "No available proxies in the Pool" in msg:
+                    if "Proxy rotation error" in msg or "No available proxies" in msg:
                         self.redis_facade.jobs.requeue_job(job_data)
                         time.sleep(2)
                     else:
                         self.message.emit(f"❌ Setup error for Job '{job.name}': {msg}")
                         self.redis_facade.jobs.set_job_result(job.uuid, False, f"Setup Failed: {msg}")
-                        
                     continue
-                    
+                
                 self.message.emit(f"▶️ Starting '{job.name}' on {device.device_name}...")
                 
                 if job.parameters.get("open_scrcpy"):

@@ -1,4 +1,5 @@
 # src/controllers/proxy_controller.py
+import re
 import requests
 import ipaddress
 from typing import Optional, Tuple
@@ -66,12 +67,12 @@ class ProxyController(BaseController[Proxy]):
             self.error_occurred.emit(str(e))
             return None
 
-    def release_proxy(self, uuid: str) -> None:
+    def release_proxy(self, uuid: str, delay_seconds: int = 0) -> None:
         """
-        Returns the Proxy back to the Redis Pool.
+        Returns the Proxy back to the Redis Pool, with an optional cooldown delay.
         """
         try:
-            self.service.release_proxy(uuid)
+            self.service.release_proxy(uuid, delay_seconds)
         except Exception as e:
             logger.error(f"Error releasing proxy {uuid}: {e}")
             self.error_occurred.emit(str(e))
@@ -198,10 +199,13 @@ class ProxyController(BaseController[Proxy]):
                     proxy_http = data.get("proxyhttp", "")
                     if proxy_http and isinstance(proxy_http, str) and ":" in proxy_http:
                         return True, proxy_http
-
-                error_msg = data.get(
-                    "message", "Unknown error from provider or Local Box."
-                )
+                error_msg = data.get("message", "Unknown error from provider or Local Box.")
+                match = re.search(r"(\d+)\s*s", error_msg.lower())
+                
+                if match:
+                    cooldown_seconds = int(match.group(1))
+                    return False, f"COOLDOWN:{cooldown_seconds}"
+                    
                 return False, f"Rotation denied: {error_msg}"
 
             return (

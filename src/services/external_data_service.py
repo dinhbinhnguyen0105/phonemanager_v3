@@ -121,10 +121,11 @@ class ExternalDataService:
 
         final_title = self._process_template_replacement(raw_title, product_dict).upper()
         final_desc = self._process_template_replacement(raw_desc, product_dict)
-
+        
+        footer = "Do tính chất công việc di chuyển ngoài đường thường xuyên, em có thể lỡ tin nhắn trên Facebook. Quý anh/chị vui lòng gọi trực tiếp SDT/ Zalo trên bài đăng giúp em nhé.\n\n------------------------------\n🌺Ký gửi mua, bán - cho thuê, thuê bất động sản xin liên hệ 0375 155 525 - Đ. Bình🌺\n------------------------------\n"
         return {
             "title": final_title,
-            "description": f"{final_title}\n\n{final_desc}",
+            "description": f"{final_title}\n\n{final_desc}\n\n{footer}",
             "image_paths": [],
         }
 

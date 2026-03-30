@@ -1,5 +1,7 @@
 # src/drivers/redis/proxy_state.py
+import threading
 from typing import Optional, Dict, Any, List
+
 
 from src.utils.logger import logger
 from src.constants import ProxyStatus
@@ -109,20 +111,36 @@ class ProxyState(BaseState):
             return proxy_uuid_str
         return None
 
-    def release_proxy(self, proxy_uuid: str) -> None:
+    def release_proxy(self, proxy_uuid: str, delay_seconds: int = 0) -> None:
         """
-        Releases the proxy and returns it to its original pool.
-        
-        :param proxy_uuid: Unique identifier for the proxy to be released.
+        Removes a proxy from the active working set and returns it to the available pool.
+
+        This method synchronizes the Redis state by deleting the proxy from the 
+        'working' hash map. If a delay is specified, it schedules the proxy to 
+        be re-added to the pool after a cooldown period using a background thread. 
+        Otherwise, the proxy is returned to the pool immediately.
+
+        Args:
+            proxy_uuid (str): The unique identifier of the proxy to be released.
+            delay_seconds (int): The duration in seconds to wait before the proxy 
+                                 becomes available for other devices. Defaults to 0.
         """
         self.hdel(self._key("working"), proxy_uuid)
         
         info = self.get_proxy_info(proxy_uuid)
         p_type = info.get("type", ProxyType.STATIC.value)
+        
         if isinstance(p_type, bytes):
             p_type = p_type.decode('utf-8')
             
-        self.add_to_pool(proxy_uuid, p_type)
+        if delay_seconds > 0:
+            timer = threading.Timer(
+                delay_seconds, 
+                lambda: self.add_to_pool(proxy_uuid, p_type)
+            )
+            timer.start()
+        else:
+            self.add_to_pool(proxy_uuid, p_type)
     
     def get_proxy_info(self, proxy_uuid: str) -> Dict[str, Any]:
         """Retrieves metadata for a specific proxy."""
