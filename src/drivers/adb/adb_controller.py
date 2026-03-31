@@ -227,9 +227,42 @@ class ADBController:
     def uninstall_apk(self, user_id: int, package_name: str) -> bool: 
         output = self._shell(f"pm uninstall --user {user_id} {package_name}")
         return "success" in output.lower()
+    
+    def block_app_notifications(self, user_id: int, package_name: str) -> bool:
+        """
+        Disables all visual and system notifications for a specific application.
+
+        This method uses a two-layered approach to ensure compatibility across 
+        different Android versions:
+        1. Utilizes 'appops' to set the POST_NOTIFICATION operation to 'ignore'. 
+           This is effective for the majority of Android versions.
+        2. Attempts to revoke the 'POST_NOTIFICATIONS' permission specifically 
+           introduced in Android 13 (API 33).
+
+        Args:
+            user_id (int): The target Android user profile ID.
+            package_name (str): The unique package identifier (e.g., 'com.facebook.katana').
+
+        Returns:
+            bool: True if the primary restriction (appops) was applied successfully, 
+                  False if an error or exception occurred.
+        """
+        success = True
+        
+        appops_cmd = f"appops set --user {user_id} {package_name} POST_NOTIFICATION ignore"
+        output_appops = self._shell(appops_cmd)
+        
+        if "error" in output_appops.lower() or "exception" in output_appops.lower():
+            success = False
+
+        revoke_cmd = f"pm revoke --user {user_id} {package_name} android.permission.POST_NOTIFICATIONS"
+        self._shell(revoke_cmd) 
+
+        return success
 
     def grand_apk_permission(self, user_id: int, package_name: str, permissions: List[str] = DEFAULT_APP_PERMISSIONS) -> bool:
         success = True
+        self.block_app_notifications(user_id, package_name)
         for perm in permissions:
             output = self._shell(f"pm grant --user {user_id} {package_name} {perm}")
             if "error" in output.lower():
