@@ -89,7 +89,7 @@ class ProxyService(BaseService[Proxy]):
         proxy_uuid = self.redis_facade.proxies.acquire_proxy(device_id, p_type)
         if not proxy_uuid:
             p_type_name = p_type.value if p_type else "ANY"
-            logger.warning(f"[{device_id}] No '{p_type_name}' proxies available in the Redis Pool.")
+            # logger.warning(f"[{device_id}] No '{p_type_name}' proxies available in the Redis Pool.")
             return None
 
         proxy = self.get_by_id(proxy_uuid)
