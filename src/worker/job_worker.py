@@ -33,18 +33,21 @@ class JobExecutionWorker(QThread):
             if not job_data: 
                 idle_count += 1
                 if idle_count >= 5:
-                    break 
+                    break
+                # logger.debug("No job available. Waiting...")
                 continue
                 
             idle_count = 0
             job = Job.from_dict(job_data)
-            if not job: 
+            if not job:
+                # logger.debug("Invalid job data. Skipping...")
                 continue
                 
             device = self.controllers.device_controller.get_by_id(job.device_uuid)
             if not device or device.device_status != DeviceStatus.ONLINE:
                 self.redis_facade.jobs.requeue_job(job_data)
                 time.sleep(1)
+                # logger.debug("Device not available. Waiting...")
                 continue
 
             lock_key = f"farm:device:lock:{device.device_id}"
@@ -53,6 +56,7 @@ class JobExecutionWorker(QThread):
             if not is_locked:
                 self.redis_facade.jobs.requeue_job(job_data)
                 time.sleep(1)
+                # logger.debug("Device is locked. Waiting...")
                 continue
 
             is_setup_success = False
@@ -69,6 +73,7 @@ class JobExecutionWorker(QThread):
                     logger.error(f"[{job.name}] {err_msg}")
                     self.message.emit(f"❌ Skipping Job '{job.name}': {err_msg}")
                     self.redis_facade.jobs.set_job_result(job.uuid, False, err_msg)
+                    # logger.debug(f"[{job.name}] {err_msg}")
                     continue 
                 
                 is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)                
@@ -79,6 +84,7 @@ class JobExecutionWorker(QThread):
                     else:
                         self.message.emit(f"❌ Setup error for Job '{job.name}': {msg}")
                         self.redis_facade.jobs.set_job_result(job.uuid, False, f"Setup Failed: {msg}")
+                    # logger.debug(f"[{job.name}] {msg}")
                     continue
                 
                 self.message.emit(f"▶️ Starting '{job.name}' on {device.device_name}...")
