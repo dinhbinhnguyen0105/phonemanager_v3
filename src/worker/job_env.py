@@ -78,7 +78,7 @@ def setup_device_environment(
             ptype=proxy.proxy_type.value
         )
         
-        if rs_result in ["START_FAILED", "NO_INTERNET", "NO_ROOT"]: 
+        if rs_result in ["START_FAILED", "NO_INTERNET", ]:  # "NO_ROOT"
             teardown_device_environment(controllers, device, proxy)
             return False, None, f"Failed to apply proxy to device: {rs_result}"
 
