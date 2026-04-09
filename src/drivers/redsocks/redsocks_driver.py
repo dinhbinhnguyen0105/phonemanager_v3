@@ -49,6 +49,27 @@ class RedsocksDriver:
             if os.path.exists(local_temp):
                 os.remove(local_temp)
 
+    def __setup_iptables(self, proxy_ip: str):
+        """Configures firewall rules safely using a custom chain."""
+        cmds = [
+            "iptables -t nat -N REDSOCKS 2>/dev/null",
+            "iptables -t nat -F REDSOCKS",
+            "iptables -t nat -A REDSOCKS -d 127.0.0.0/8 -j RETURN",
+            f"iptables -t nat -A REDSOCKS -d {proxy_ip} -j RETURN",
+            
+            "iptables -t nat -A REDSOCKS -p udp --dport 53 -j RETURN",  
+            "iptables -t nat -A REDSOCKS -p tcp --dport 53 -j RETURN",
+
+            "iptables -t nat -A REDSOCKS -p tcp --dport 853 -j RETURN", 
+            
+            "iptables -t nat -A REDSOCKS -p tcp -j REDIRECT --to-ports 12345",
+        
+            "iptables -t nat -D OUTPUT -j REDSOCKS 2>/dev/null",
+            "iptables -t nat -I OUTPUT 1 -j REDSOCKS"
+        ]
+        for c in cmds:
+            self.adb._shell(f"su -c '{c}'")
+
     def _setup_iptables(self, proxy_ip: str):
         """Configures firewall rules safely using a custom chain."""
         cmds = [
@@ -57,6 +78,12 @@ class RedsocksDriver:
             "iptables -t nat -A REDSOCKS -d 127.0.0.0/8 -j RETURN",
             f"iptables -t nat -A REDSOCKS -d {proxy_ip} -j RETURN",
             
+            # --- CÁCH 1: Bỏ qua proxy cho toàn bộ dải IP nội bộ ---
+            "iptables -t nat -A REDSOCKS -d 192.168.0.0/16 -j RETURN", # Mạng LAN lớp C (Phổ biến nhất)
+            "iptables -t nat -A REDSOCKS -d 10.0.0.0/8 -j RETURN",     # Mạng LAN lớp A
+            "iptables -t nat -A REDSOCKS -d 172.16.0.0/12 -j RETURN",  # Mạng LAN lớp B
+            # ------------------------------------------------------
+
             "iptables -t nat -A REDSOCKS -p udp --dport 53 -j RETURN",  
             "iptables -t nat -A REDSOCKS -p tcp --dport 53 -j RETURN",
 

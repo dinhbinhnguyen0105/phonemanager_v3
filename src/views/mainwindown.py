@@ -186,15 +186,17 @@ class MainWindow(QMainWindow):
 
         except Exception:
             pass
-                
+
     def closeEvent(self, event):
         """
-        Handles the application cleanup process when the main window is closed.
+        Handles the application cleanup and Redis state reset when the main window is closed.
 
-        This method ensures a graceful shutdown by stopping all active timers 
-        (UI scaling and status updates) and terminating background job workers. 
-        It also triggers a global stop command for all controllers to release 
-        system resources before accepting the close event.
+        This method performs a comprehensive shutdown sequence:
+        1. Stops UI-related timers (scaling and status updates).
+        2. Terminates all background job workers.
+        3. Invokes the global stop command for all controllers.
+        4. Cleans up Redis by scanning and deleting all keys with the 'farm:' prefix 
+           to ensure no stale locks or states persist for the next session.
 
         Args:
             event (QCloseEvent): The window close event.
@@ -210,8 +212,23 @@ class MainWindow(QMainWindow):
                 worker.stop()
                 
         self.controllers.stop_all()
+        
+        try:
+            logger.info("Cleaning up Redis: Removing all locks and legacy states...")
+            
+            redis_client = self.controllers.service_manager.redis.devices.redis
+            
+            keys_deleted = 0
+            for key in redis_client.scan_iter("farm:*"):
+                redis_client.delete(key)
+                keys_deleted += 1
+                
+            logger.info(f"Redis reset successfully! (Deleted {keys_deleted} keys)")
+        except Exception as e:
+            logger.error(f"Error during Redis cleanup: {e}")
+
         event.accept()
-                    
+
     def _on_worker_update_device(self, device):
         self.controllers.device_controller.update(device)
     

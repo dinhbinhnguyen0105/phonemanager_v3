@@ -26,7 +26,7 @@ def setup_device_environment(
     proxy = None
     try:
         adb = ADBController(device.device_id)
-        adb.enable_internet()
+        logger.debug(f"Enable internet: {adb.enable_internet()}")
         adb.enanble_wifi()
         
         switch_success = adb.switch_user(user.user_id)

@@ -8,8 +8,8 @@ repositories:
   screen_shot_dir: "./repositories/screenshots"
   gnirehtet_proc: "C:/Users/dinhb/Desktop/Dev/python/phonemanager_v3/repositories/gnirehtet/gnirehtet.exe"
 
-  tiktok_path: "./repositories/apks/facebook.apk"
-  facebook_path: "./repositories/apks/tiktok.apk"
+  tiktok_path: "./repositories/apks/tiktok.apk"
+  facebook_path: "./repositories/apks/facebook.apk"
 
 apk_dir: "./apks"
 
