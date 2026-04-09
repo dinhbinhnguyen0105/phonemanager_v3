@@ -292,7 +292,7 @@ class DeviceController(BaseController[Device]):
 
         device = self._active_workers[task_name]["device"]
 
-        if result in ["NO_ROOT", "START_FAILED", "NO_INTERNET"]:
+        if result in ["START_FAILED", "NO_INTERNET"]: # "NO_ROOT", 
             logger.error(f"[{device.device_name}] Failed to enable proxy: {result}")
             self.redsocks_enable_failed.emit(device, result)
         else:
