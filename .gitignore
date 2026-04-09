@@ -4,7 +4,7 @@
 .database
 .results.json
 logs
-repositories
+repositories/
 settings.yaml
 dist
 build
