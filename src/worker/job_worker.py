@@ -76,7 +76,7 @@ class JobExecutionWorker(QThread):
                     # logger.debug(f"[{job.name}] {err_msg}")
                     continue 
                 
-                is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)                
+                is_setup_success, proxy, msg = setup_device_environment(self.controllers, device, user)
                 if not is_setup_success:
                     if "Proxy rotation error" in msg or "No available proxies" in msg:
                         self.redis_facade.jobs.requeue_job(job_data)
