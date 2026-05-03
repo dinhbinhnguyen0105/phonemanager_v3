@@ -1,9 +1,17 @@
 # src/repositories/external_data_repo.py
 import sqlite3
 from typing import List, Optional
+from datetime import datetime, timedelta
+
+from src.constants import (
+    RealEstateTemplate__Name,
+    RealEstateProduct__TransactionType,
+    RealEstateProduct__Category,
+    Database__Table,
+)
 from src.entities import (
     RealEstateProduct,
-    RealEstateTemplateType,
+    RealEstateTemplate,
 )
 from src.utils.logger import logger
 from src.utils.yaml_handler import settings
@@ -65,14 +73,14 @@ class ExternalDataRepository:
             updated_at=row["updated_at"],
         )
 
-    def _map_row_to_template(self, row: sqlite3.Row) -> RealEstateTemplateType:
+    def _map_row_to_template(self, row: sqlite3.Row) -> RealEstateTemplate:
         """
-        Maps a database row to a RealEstateTemplateType entity.
+        Maps a database row to a RealEstateTemplate entity.
         """
-        return RealEstateTemplateType(
+        return RealEstateTemplate(
             id=row["id"],
             transaction_type=row["transaction_type"],
-            part=row["part"],
+            name=row["name"],
             category=row["category"],
             value=row["value"],
             is_default=bool(row["is_default"]),
@@ -95,7 +103,7 @@ class ExternalDataRepository:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM RealEstateProducts")
+                cursor.execute(f"SELECT * FROM {Database__Table.REAL_ESTATE_PRODUCTS.value}")
                 rows = cursor.fetchall()
                 for row in rows:
                     results.append(self._map_row_to_product(row))
@@ -114,7 +122,7 @@ class ExternalDataRepository:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT pid FROM RealEstateProducts")
+                cursor.execute(f"SELECT pid FROM {Database__Table.REAL_ESTATE_PRODUCTS.value}")
                 rows = cursor.fetchall()
                 for row in rows:
                     if row["pid"]:
@@ -136,7 +144,7 @@ class ExternalDataRepository:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM RealEstateProducts WHERE pid = ?", (pid,))
+                cursor.execute(f"SELECT * FROM {Database__Table.REAL_ESTATE_PRODUCTS.value} WHERE pid = ?", (pid,))
                 row = cursor.fetchone()
                 if row:
                     return self._map_row_to_product(row)
@@ -144,39 +152,40 @@ class ExternalDataRepository:
             logger.error(f"[ExternalRepo] Error getting product {pid}: {e}")
         return None
 
-    def get_one_recent_product(
-        self, transaction_type: int, recent_day: int = 7
-    ) -> Optional[RealEstateProduct]:
+    def get_one_recent_product(self, transaction_type, recent_day: int = 7) -> Optional[RealEstateProduct]:
         """
-        Retrieves one random product updated within a specific recent timeframe.
-        
-        Uses RANDOM() to prevent duplicate selection during concurrent tool execution.
-        
-        Args:
-            transaction_type (int): The type of transaction (e.g., Sale, Rent).
-            recent_day (int): The look-back period in days.
-            
-        Returns:
-            Optional[RealEstateProduct]: A random recent product if found, else None.
+        Lấy một sản phẩm ngẫu nhiên được cập nhật gần đây.
+        Sử dụng SQL function để tính toán thời gian, giúp logic đồng bộ với các hàm query đơn lẻ khác.
         """
+        # 1. Chuẩn hóa transaction_type về chuỗi (TEXT) để khớp với Database
+        if isinstance(transaction_type, int):
+            try:
+                t_val = list(RealEstateProduct__TransactionType)[transaction_type].value
+            except (IndexError, ValueError):
+                t_val = RealEstateProduct__TransactionType.SALE.value
+        else:
+            t_val = transaction_type.value if hasattr(transaction_type, 'value') else str(transaction_type)
+
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                query = """
-                    SELECT * FROM RealEstateProducts 
+                query = f"""
+                    SELECT * FROM {Database__Table.REAL_ESTATE_PRODUCTS.value} 
                     WHERE transaction_type = ? 
-                    AND status = 1
-                    AND updated_at >= date('now', '-' || ? || ' days')
+                    AND updated_at >= datetime('now', 'localtime', '-{int(recent_day)} days') 
                     ORDER BY RANDOM() LIMIT 1
                 """
-                cursor.execute(query, (transaction_type, recent_day))
+                
+                cursor.execute(query, (t_val,))
                 row = cursor.fetchone()
                 if row:
                     return self._map_row_to_product(row)
+                    
         except Exception as e:
             logger.error(f"[ExternalRepo] Error getting recent product: {e}")
+            
         return None
-
+    
     # ======================================================
     # TEMPLATE METHODS
     # ======================================================
@@ -192,7 +201,7 @@ class ExternalDataRepository:
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                cursor.execute("SELECT * FROM RealEstateTemplates")
+                cursor.execute("SELECT * FROM real_estate_templates")
                 rows = cursor.fetchall()
                 for row in rows:
                     results.append(dict(row))
@@ -201,8 +210,8 @@ class ExternalDataRepository:
         return results
 
     def get_default_template(
-        self, transaction_type: int, part: int
-    ) -> Optional[RealEstateTemplateType]:
+        self, name: RealEstateTemplate__Name, transaction_type: RealEstateProduct__TransactionType, category: RealEstateProduct__Category,
+    ) -> Optional[RealEstateTemplate]:
         """
         Retrieves the default template for a specific transaction type and content part.
         
@@ -211,17 +220,17 @@ class ExternalDataRepository:
             part (int): The content part identifier (e.g., Title, Description).
             
         Returns:
-            Optional[RealEstateTemplateType]: The default template if found, else None.
+            Optional[RealEstateTemplate]: The default template if found, else None.
         """
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                query = """
-                    SELECT * FROM RealEstateTemplates 
-                    WHERE transaction_type = ? AND part = ? AND is_default = 1
+                query = f"""
+                    SELECT * FROM {Database__Table.REAL_ESTATE_TEMPLATES.value}
+                    WHERE transaction_type = ? AND name = ? AND category = ? AND is_default = 1
                     LIMIT 1
                 """
-                cursor.execute(query, (transaction_type, part))
+                cursor.execute(query, (transaction_type, name, category))
                 row = cursor.fetchone()
                 if row:
                     return self._map_row_to_template(row)
@@ -230,8 +239,8 @@ class ExternalDataRepository:
         return None
 
     def get_random_template(
-        self, transaction_type: int, category: int, part: int = 0
-    ) -> Optional[RealEstateTemplateType]:
+        self, name: RealEstateTemplate__Name, transaction_type: RealEstateProduct__TransactionType, category: RealEstateProduct__Category,
+    ) -> Optional[RealEstateTemplate]:
         """
         Retrieves a random template matching the transaction type, category, and content part.
         
@@ -241,17 +250,17 @@ class ExternalDataRepository:
             part (int): The content part identifier.
             
         Returns:
-            Optional[RealEstateTemplateType]: A random matching template if found, else None.
+            Optional[RealEstateTemplate]: A random matching template if found, else None.
         """
         try:
             with self._get_connection() as conn:
                 cursor = conn.cursor()
-                query = """
-                    SELECT * FROM RealEstateTemplates 
-                    WHERE transaction_type = ? AND category = ? AND part = ? 
+                query = f"""
+                    SELECT * FROM {Database__Table.REAL_ESTATE_TEMPLATES.value} 
+                    WHERE transaction_type = ? AND name = ? AND category = ? AND is_default = 0
                     ORDER BY RANDOM() LIMIT 1
                 """
-                cursor.execute(query, (transaction_type, category, part))
+                cursor.execute(query, (transaction_type, name, category))
                 row = cursor.fetchone()
                 if row:
                     return self._map_row_to_template(row)

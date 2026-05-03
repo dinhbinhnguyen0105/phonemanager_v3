@@ -1,6 +1,17 @@
 # core\constants.py
 from enum import Enum
 
+class Database__Table(str, Enum):
+    """
+    Mapping of database table names used within the application.
+    """
+    FACEBOOK_ACCOUNTS = "facebook_accounts"
+    REAL_ESTATE_PRODUCTS = "real_estate_products"
+    MISC_PRODUCTS = "misc_products"
+    REAL_ESTATE_TEMPLATES = "real_estate_templates"
+    SETTINGS = "settings"
+    PROXY = "proxy"
+
 class RedisQueue(str, Enum):
     DEVICE_EVENTS = "farm:device_events:queue"
 
@@ -80,3 +91,109 @@ class FacebookReaction(str, Enum):
     WOW = "wow"
     SAD = "sad"
     ANGRY = "angry"
+
+class Product__Status(str, Enum):
+    """
+    Inventory and visibility status of listed products.
+    """
+    SELLING = "selling"
+    SOLD = "sold"
+    PAUSED = "paused"
+
+class RealEstateProduct__TransactionType(str, Enum):
+    """
+    Types of real estate market transactions.
+    """
+    SALE = "sale"
+    RENTAL = "rental"
+    TRANSFER = "transfer"
+
+class RealEstateProduct__Province(str, Enum):
+    """
+    Supported provinces for real estate listings.
+    """
+    LAM_DONG = "lam_dong"
+
+class RealEstateProduct__District(str, Enum):
+    """
+    Supported districts for real estate listings.
+    """
+    DA_LAT = "da_lat"
+
+class RealEstateProduct__Ward(str, Enum):
+    """
+    Specific wards and communes within the supported districts, primarily in Da Lat.
+    """
+    PHUONG_1 = "phuong_1_xuan_huong"
+    PHUONG_2 = "phuong_2_xuan_huong"
+    PHUONG_3 = "phuong_3_xuan_huong"
+    PHUONG_4 = "phuong_4_xuan_huong"
+    PHUONG_5 = "phuong_5_cam_ly"
+    PHUONG_6 = "phuong_6_cam_ly"
+    PHUONG_7 = "phuong_7_lang_biang"
+    PHUONG_8 = "phuong_8_lam_vien"
+    PHUONG_9 = "phuong_9_lam_vien"
+    PHUONG_10 = "phuong_10_xuan_huong"
+    PHUONG_11 = "phuong_11_xuan_truong"
+    PHUONG_12 = "phuong_12_lam_vien"
+    XUAN_TRUONG = "xa_xuan_truong"
+    XUAN_THO = "xa_xuan_tho"
+    TA_NUNG = "xa_ta_nung"
+    TRAM_HANH = "xa_tram_hanh"
+    LAC_DUONG = "thi_tran_lac_duong"
+
+class RealEstateProduct__Category(str, Enum):
+    """
+    Classification of real estate property types.
+    """
+    TOWNHOUSE = "townhouse"
+    STREET_FRONT_HOUSE = "street_front_house"
+    APARTMENT_CONDO = "apartment_condo"
+    VILLA = "villa"
+    LAND_PLOT = "land_plot"
+    WAREHOUSE_YARD = "warehouse_yard"
+    BUSINESS_PREMISES = "business_premises"
+    HOTEL = "hotel"
+    HOMESTAY = "homestay"
+
+class RealEstateProduct__Unit(str, Enum):
+    """
+    Pricing units for real estate listings.
+    """
+    BILLION = "billion"
+    MILLION = "million"
+    MILLION_PER_MONTH = "million_per_month"
+
+class RealEstateProduct__Legal(str, Enum):
+    """
+    Legal documentation status and deed types for properties.
+    """
+    VI_BANG_PURCHASE = "vi_bang_purchase"
+    SHARED_AGRICULTURAL_DEED = "shared_agriculture_deed"
+    DECENTRALIZED_AGRICULTURAL_DEED = "decentralized_agriculture_deed"
+    PRIVATE_AGRICULTURAL_DEED = "private_agriculture_deed"
+    SHARED_CONSTRUCTION_DEED = "shared_construction_deed"
+    DECENTRALIZED_CONSTRUCTION_DEED = "decentralized_construction_deed"
+    PRIVATE_CONSTRUCTION_DEED = "private_construction_deed"
+
+class RealEstateProduct__BuildingLine(str, Enum):
+    """
+    Accessibility and road access specifications for properties.
+    """
+    CAR_ACCESS_ROAD = "car_access_road"
+    MOTORBIKE_ACCESS_ROAD = "motorbike_access_road"
+
+class RealEstateProduct__Furniture(str, Enum):
+    """
+    Furniture status for residential property listings.
+    """
+    NO_FURNITURE = "no_furniture"
+    BASIC_FURNITURE = "basic_furniture"
+    FULL_FURNITURE = "full_furniture"
+
+class RealEstateTemplate__Name(str, Enum):
+    """
+    Identifiable components for real estate content generation templates.
+    """
+    TITLE = "title"
+    DESCRIPTION = "description"

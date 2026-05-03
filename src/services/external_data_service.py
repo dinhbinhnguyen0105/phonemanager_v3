@@ -1,11 +1,22 @@
 # src/services/external_data_service.py
 import os
+import sys
 import re
 import random
 from typing import List, Optional, Dict, Any
+from pathlib import Path
+
+root_dir = Path(__file__).resolve().parent.parent.parent
+sys.path.append(str(root_dir))
 
 from src.repositories.external_data_repo import ExternalDataRepository
-from src.entities import RealEstateProduct, RealEstateTemplateType
+from src.entities import (
+    RealEstateProduct, 
+    RealEstateTemplate, 
+    RealEstateTemplate__Name,
+    RealEstateProduct__TransactionType,
+    RealEstateProduct__Category
+)
 from src.utils.mapper import enrich_real_estate_product
 from src.utils.logger import logger
 from src.utils.yaml_handler import realestate_config
@@ -81,27 +92,27 @@ class ExternalDataService:
         """
         Retrieves a random PID from the most recent products.
         """
-        product = self.repo.get_one_recent_product(transaction_type=0, recent_day=7)
+        product = self.repo.get_one_recent_product(transaction_type=RealEstateProduct__TransactionType.SALE, recent_day=7)
         if not product:
             logger.warning("No recent product found.")
             return None
         return product.pid
 
     def get_smart_template(
-        self, transaction_type: int, category: int, part: int
-    ) -> Optional[RealEstateTemplateType]:
+        self, transaction_type: Any, category: Any, template_name: RealEstateTemplate__Name
+    ) -> Optional[RealEstateTemplate]:
         """
         Finds the most suitable template based on transaction type and category, 
         falling back to default if necessary.
         """
-        template = self.repo.get_random_template(transaction_type, category, part)
+        template = self.repo.get_random_template(template_name, transaction_type, category)
 
         if template:
             return template
         logger.info(
-            f"Specific template not found for cat {category}, falling back to default."
+            f"Specific template '{template_name.value}' not found for cat {category}, falling back to default."
         )
-        return self.repo.get_default_template(transaction_type, part)
+        return self.repo.get_default_template(template_name, transaction_type, category)
 
     def generate_content_for_product(
         self, product_dict: Dict[str, Any]
@@ -113,8 +124,8 @@ class ExternalDataService:
         trans_type = product_dict.get("transaction_type")
         cat = product_dict.get("category")
 
-        title_tmpl_obj = self.get_smart_template(trans_type, cat, part=0) # type: ignore
-        desc_tmpl_obj = self.get_smart_template(trans_type, cat, part=1) # type: ignore
+        title_tmpl_obj = self.get_smart_template(trans_type, cat, RealEstateTemplate__Name.TITLE)
+        desc_tmpl_obj = self.get_smart_template(trans_type, cat, RealEstateTemplate__Name.DESCRIPTION)
 
         raw_title = title_tmpl_obj.value if title_tmpl_obj else ""
         raw_desc = desc_tmpl_obj.value if desc_tmpl_obj else ""
@@ -143,7 +154,7 @@ class ExternalDataService:
         
         product_id = product_dict.get("id")
         img_dir = os.path.join(
-            self.image_container_dir, str(product_id), f"logo_{product_id}"
+            self.image_container_dir, str(product_id), f"with_watermark_{product_id}"
         )
         result["image_paths"] = self.get_images_from_folder(img_dir)
 
@@ -161,31 +172,11 @@ class ExternalDataService:
 
         replacements: Dict[str, str] = {}
 
-        def safe_float(val):
-            if val is None or val == "":
-                return "0"
-            try:
-                f = float(val)
-                return f"{f:g}"
-            except:
-                return "0"
-
-        def get_config_text(cfg_list, idx):
-            try:
-                if idx is None or int(idx) < 0:
-                    return ""
-                return cfg_list[int(idx)]
-            except (IndexError, TypeError, ValueError):
-                return str(idx) if idx is not None else ""
-
         for attr_name, config_list_name in SETTING_FIELD_MAP.items():
-            attr_val = product_dict.get(attr_name)
-            config_list = getattr(realestate_config, config_list_name, [])
-
-            text_val = get_config_text(config_list, attr_val)
+            text_val = product_dict.get(f"{attr_name}_text") or ""
 
             if attr_name in ["ward", "district", "province"]:
-                text_val = text_val.title()
+                text_val = str(text_val).title()
 
             replacements[f"<{attr_name}>"] = text_val
 
@@ -194,13 +185,10 @@ class ExternalDataService:
         replacements["<description>"] = str(product_dict.get("description") or "")
         replacements["<function>"] = str(product_dict.get("function") or "")
 
-        replacements["<area>"] = safe_float(product_dict.get("area"))
-        replacements["<price>"] = safe_float(product_dict.get("price"))
-        replacements["<structure>"] = safe_float(product_dict.get("structure"))
-
-        replacements["<unit>"] = (
-            realestate_config.units[0] if realestate_config.units else ""
-        )
+        replacements["<area>"] = str(product_dict.get("area") or "0")
+        replacements["<price>"] = product_dict.get("price_formatted", "0")
+        replacements["<structure>"] = str(product_dict.get("structure") or "0")
+        replacements["<unit>"] = product_dict.get("unit_text") or ""
 
         phone = (
             realestate_config.contact_phones[0]
@@ -265,3 +253,51 @@ class ExternalDataService:
         except Exception as e:
             logger.error(f"Error scanning image folder {normalized_path}: {e}")
             return []
+
+
+if __name__ == "__main__":
+    import json
+    from PySide6.QtCore import QCoreApplication
+
+    # 1. Khởi tạo QCoreApplication (Bắt buộc để QSqlDatabase/SQL Drivers hoạt động)
+    app = QCoreApplication.instance()
+    if not app:
+        app = QCoreApplication(sys.argv)
+
+    # Khởi tạo repo và service để chạy độc lập
+    test_repo = ExternalDataRepository()
+    test_service = ExternalDataService(test_repo)
+
+    print("="*50)
+    print("🧪 TESTING EXTERNAL DATA SERVICE")
+    print("="*50)
+
+    # 1. Lấy danh sách PIDs
+    pids = test_service.get_product_pids()
+    print(f"[*] Tổng số PID tìm thấy: {len(pids)}")
+
+    if pids:
+        sample_pid = pids[0]
+        
+        # 2. Kiểm tra lấy chi tiết sản phẩm
+        print(f"\n[*] Lấy chi tiết sản phẩm PID: {sample_pid}")
+        details = test_service.get_product_details(sample_pid)
+        if details:
+            # In ra 5 keys đầu tiên để kiểm tra
+            print(f"-> Thành công. Street: {details.get('street')}, Price: {details.get('price_formatted')}")
+
+        # 3. Kiểm tra sinh nội dung từ Template
+        print(f"\n[*] Thử nghiệm sinh nội dung cho PID: {sample_pid}")
+        content = test_service.generate_content_by_pid(sample_pid)
+        if content:
+            print("-" * 30)
+            print(f"TITLE:\n{content.get('title')}")
+            print(f"\nIMAGES FOUND: {len(content.get('image_paths', []))}")
+            print("-" * 30)
+            print(f"DESCRIPTION:\n{content.get('description')}")
+
+    else:
+        print("[!] Không tìm thấy dữ liệu trong database để test.")
+
+    print("\n" + "="*50)
+    
