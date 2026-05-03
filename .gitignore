@@ -5,7 +5,7 @@
 .results.json
 logs
 repositories/
-settings.yaml
+./settings.yaml
 dist
 build
 __pycache__/
